@@ -143,6 +143,12 @@ Use from custom apps:
 - Trigger alerts when any provider drops below a threshold
 - Feed `brim json` or `brim json --full` into tmux, i3blocks, SketchyBar, Polybar, or a local web app
 
+## Community
+
+Contribution and support guidelines live in [CONTRIBUTING.md](CONTRIBUTING.md),
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and
+[SECURITY.md](SECURITY.md).
+
 ## Limitations
 
 - Provider integrations are a mix of official and internal or reverse-engineered surfaces

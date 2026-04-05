@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest an improvement to a command, provider integration, or workflow.
+title: "[feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: I want a simpler way to consume quota data from shell scripts.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the change you want to see.
+    validations:
+      required: true
+  - type: input
+    id: impact
+    attributes:
+      label: Provider or command impact
+      description: Which commands or providers would this affect?
+      placeholder: json / status / claude
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or alternative approaches did you try?
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add examples, mock output, or related constraints.

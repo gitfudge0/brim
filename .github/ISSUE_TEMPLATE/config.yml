@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: mailto:mahapatra.digvijay@gmail.com
+    about: Report vulnerabilities privately instead of opening a public issue.
+  - name: Maintainer contact
+    url: mailto:mahapatra.digvijay@gmail.com
+    about: Reach out privately for repository questions that do not fit the issue templates.

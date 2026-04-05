@@ -1,0 +1,67 @@
+name: Bug report
+description: Report a reproducible problem with a command, provider integration, or workflow.
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug.
+
+        Do not use this form for security vulnerabilities. Report those privately to mahapatra.digvijay@gmail.com.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the problem.
+      placeholder: `brim json --full` drops the provider notes field.
+    validations:
+      required: true
+  - type: input
+    id: affected_area
+    attributes:
+      label: Affected command or provider
+      description: Which command, provider, or workflow is impacted?
+      placeholder: json / codex
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: List exact steps so the problem can be reproduced.
+      placeholder: |
+        1. Run `brim sync codex`
+        2. Run `brim json codex`
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, shell, Rust toolchain, app version, and any relevant provider/account context.
+      placeholder: |
+        - OS:
+        - Shell:
+        - `brim --version`:
+        - Provider:
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      description: Paste logs or command output with secrets removed.
+      render: shell
