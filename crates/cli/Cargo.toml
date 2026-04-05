@@ -1,0 +1,24 @@
+[package]
+name = "brim-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "brim"
+path = "src/main.rs"
+
+[dependencies]
+brim-core = { workspace = true }
+brim-providers = { workspace = true }
+brim-auth = { workspace = true }
+brim-storage = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

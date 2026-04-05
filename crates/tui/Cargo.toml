@@ -1,0 +1,21 @@
+[package]
+name = "brim-tui"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "brim-tui"
+path = "src/main.rs"
+
+[dependencies]
+brim-core = { workspace = true }
+brim-providers = { workspace = true }
+brim-storage = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+reqwest = { workspace = true }

@@ -1,0 +1,72 @@
+[workspace]
+resolver = "2"
+default-members = ["crates/cli"]
+members = [
+    "crates/core",
+    "crates/providers",
+    "crates/auth",
+    "crates/storage",
+    "crates/cli",
+    "crates/tui",
+    # "crates/gui",  # later milestone
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP
+reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls"], default-features = false }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# TUI
+ratatui = "0.29"
+crossterm = "0.28"
+
+# OAuth
+oauth2 = "5"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Secrets
+keyring = { version = "3", features = ["linux-native"] }
+
+# Config paths
+directories = "5"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Errors
+thiserror = "2"
+anyhow = "1"
+
+# Async trait
+async-trait = "0.1"
+
+# UUID (for request IDs, etc.)
+uuid = { version = "1", features = ["v4"] }
+
+# Internal crates
+brim-core = { path = "crates/core" }
+brim-providers = { path = "crates/providers" }
+brim-auth = { path = "crates/auth" }
+brim-storage = { path = "crates/storage" }
