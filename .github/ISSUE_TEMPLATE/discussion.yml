@@ -1,0 +1,28 @@
+name: Discussion
+description: Start a broader conversation about the project, provider behavior, or workflow ideas.
+title: "[discussion] "
+labels:
+  - discussion
+body:
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      description: What do you want to talk about?
+      placeholder: I want to discuss whether `brim status` should show stale data more prominently.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Share background, examples, or links that would help frame the discussion.
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: What decisions, tradeoffs, or opinions are you looking for?
+      placeholder: |
+        - Should this apply to all providers?
+        - Would this belong in `status`, `json`, or both?
+

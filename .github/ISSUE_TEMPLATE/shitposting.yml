@@ -1,0 +1,24 @@
+name: General shitposting
+description: Offbeat ideas, jokes, vibes, naming bikesheds, and other low-stakes chaos.
+title: "[shitpost] "
+labels:
+  - discussion
+  - meta
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it harmless, keep it respectful, and keep it within the Code of Conduct.
+  - type: textarea
+    id: post
+    attributes:
+      label: Post
+      description: Say whatever weird but non-destructive thing you came here to say.
+      placeholder: What if `brim` had a mode that judged my quota decisions in real time?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Optional context
+      description: Add screenshots, mock output, cursed ideas, or follow-up thoughts.
