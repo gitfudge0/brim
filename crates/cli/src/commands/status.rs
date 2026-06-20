@@ -1,15 +1,36 @@
 use anyhow::Result;
+use brim_core::history::compute_history_metrics;
 use brim_core::models::{AuthState, ProviderId, ProviderStatus};
 use brim_providers::sync_engine::SyncEngine;
 
 pub async fn run(engine: &SyncEngine, provider: Option<String>, fresh: bool) -> Result<()> {
-    let statuses = collect_statuses(engine, provider, fresh).await?;
+    let show_all_supported = provider.is_none();
+    let statuses = collect_supported_statuses(engine, provider, fresh).await?;
+
+    if show_all_supported && engine.config().enabled_provider_ids().is_empty() {
+        println!("{}", crate::commands::no_enabled_providers_message());
+        println!();
+    }
 
     for status in &statuses {
+        // Compute burn rate from the last 1 day of history (best-effort).
+        let burn_info = engine
+            .db()
+            .snapshots_for_history(status.provider, 1)
+            .ok()
+            .map(|snaps| {
+                let m = compute_history_metrics(&snaps);
+                (m.burn_rate, m.time_to_empty_mins)
+            });
+
         print_text_status(
             status.provider,
             &status.auth_state,
             status.last_snapshot.as_ref(),
+            status.enabled,
+            show_all_supported,
+            burn_info.as_ref().and_then(|(br, _)| br.as_ref()),
+            burn_info.as_ref().and_then(|(_, tte)| *tte),
         );
     }
 
@@ -21,7 +42,10 @@ pub async fn collect_statuses(
     provider: Option<String>,
     fresh: bool,
 ) -> Result<Vec<ProviderStatus>> {
-    let ids = resolve_provider_ids(engine, provider)?;
+    let ids = match provider {
+        Some(name) => vec![crate::commands::parse_provider_arg(&name)?],
+        None => engine.config().enabled_provider_ids(),
+    };
     let mut statuses = Vec::with_capacity(ids.len());
 
     for id in ids {
@@ -47,12 +71,56 @@ pub async fn collect_statuses(
     Ok(statuses)
 }
 
+pub async fn collect_supported_statuses(
+    engine: &SyncEngine,
+    provider: Option<String>,
+    fresh: bool,
+) -> Result<Vec<ProviderStatus>> {
+    let explicit_provider = provider.is_some();
+    let ids = match provider {
+        Some(name) => vec![crate::commands::parse_provider_arg(&name)?],
+        None => ProviderId::all().to_vec(),
+    };
+    let mut statuses = Vec::with_capacity(ids.len());
+
+    for id in ids {
+        let should_fetch_fresh =
+            fresh && (explicit_provider || engine.config().provider(id).enabled);
+        if should_fetch_fresh {
+            statuses.push(engine.fresh_status(id).await);
+            continue;
+        }
+
+        let snapshot = engine.cached_snapshot(id);
+        let auth = match engine.registry().get(id) {
+            Some(p) => p.auth_state().await,
+            None => AuthState::NotConfigured,
+        };
+
+        statuses.push(ProviderStatus {
+            provider: id,
+            auth_state: auth,
+            last_snapshot: snapshot,
+            enabled: engine.config().provider(id).enabled,
+        });
+    }
+
+    Ok(statuses)
+}
+
 fn print_text_status(
     id: ProviderId,
     auth: &brim_core::models::AuthState,
     snapshot: Option<&brim_core::models::UsageSnapshot>,
+    enabled: bool,
+    show_enabled: bool,
+    burn_rate: Option<&brim_core::history::BurnRate>,
+    time_to_empty_mins: Option<f64>,
 ) {
     println!("--- {} ---", id.display_name());
+    if show_enabled {
+        println!("  Enabled: {}", if enabled { "yes" } else { "no" });
+    }
     println!("  Auth: {}", auth);
 
     match snapshot {
@@ -107,8 +175,22 @@ fn print_text_status(
                 }
             }
 
+            // Burn rate inline (if available from recent history)
+            if let Some(br) = burn_rate {
+                let line = crate::commands::history::burn_rate_line(br, time_to_empty_mins);
+                println!("  {}", line);
+            }
+
             for note in &snap.notes {
                 println!("  Note: {}", note);
+            }
+
+            if snap
+                .notes
+                .iter()
+                .any(|note| note.to_lowercase().contains("stale"))
+            {
+                println!("  Hint: Run `brim sync {}` for fresh data.", id.as_str());
             }
 
             if let Some(note) = auth_cached_data_note(auth, snapshot.is_some()) {
@@ -116,7 +198,9 @@ fn print_text_status(
             }
         }
         None => {
-            if auth.is_usable() {
+            if !enabled {
+                println!("  Disabled in config");
+            } else if auth.is_usable() {
                 println!("  No cached data. Run `brim sync` to fetch.");
             } else {
                 println!(
@@ -169,18 +253,6 @@ fn format_age(dt: chrono::DateTime<chrono::Utc>) -> String {
         format!("{}h ago", age.num_hours())
     } else {
         format!("{}d ago", age.num_days())
-    }
-}
-
-fn resolve_provider_ids(engine: &SyncEngine, provider: Option<String>) -> Result<Vec<ProviderId>> {
-    match provider {
-        Some(name) => {
-            let id: ProviderId = name
-                .parse()
-                .map_err(|e: brim_core::error::CoreError| anyhow::anyhow!("{}", e))?;
-            Ok(vec![id])
-        }
-        None => Ok(engine.registry().ids()),
     }
 }
 
@@ -246,5 +318,13 @@ mod tests {
             super::auth_cached_data_note(&AuthState::Failed("bad token".into()), false),
             None
         );
+    }
+
+    #[test]
+    fn cached_data_stale_hint_is_detected_by_note() {
+        let notes = ["Data is stale (older than TTL)"];
+        assert!(notes
+            .iter()
+            .any(|note| note.to_lowercase().contains("stale")));
     }
 }

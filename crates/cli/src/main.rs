@@ -10,6 +10,11 @@ use brim_storage::paths::AppPaths;
 
 mod commands;
 
+const STATUS_AFTER_HELP: &str = "Examples:\n  brim status\n  brim status claude --fresh";
+const JSON_AFTER_HELP: &str = "Examples:\n  brim json\n  brim json codex --full";
+const AUTH_LOGIN_AFTER_HELP: &str = "Examples:\n  brim auth login copilot";
+const CONFIG_INIT_AFTER_HELP: &str = "Examples:\n  brim config init";
+
 #[derive(Parser)]
 #[command(name = "brim", about = "Brim — monitor AI assistant quotas")]
 #[command(version, long_about = None)]
@@ -25,16 +30,18 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Show usage status for all or a specific provider
+    #[command(after_help = STATUS_AFTER_HELP)]
     Status {
-        /// Provider to query (codex, claude, copilot). Omit for all.
+        /// Provider to query (codex, claude, copilot). Omit for all supported providers.
         provider: Option<String>,
         /// Force a fresh fetch (don't use cache)
         #[arg(long)]
         fresh: bool,
     },
     /// Emit machine-readable JSON; compact by default, or current summaries with --full
+    #[command(after_help = JSON_AFTER_HELP)]
     Json {
-        /// Provider to query (codex, claude, copilot). Omit for all.
+        /// Provider to query (codex, claude, copilot). Omit for all providers currently included in usage output.
         provider: Option<String>,
         /// Force a fresh fetch (don't use cache)
         #[arg(long)]
@@ -42,10 +49,24 @@ enum Commands {
         /// Emit the current detailed summary JSON shape instead of the compact default
         #[arg(long)]
         full: bool,
+        /// Include history metrics in the JSON output
+        #[arg(long)]
+        history: bool,
+    },
+    /// Show usage history, burn rate, and trends
+    History {
+        /// Provider to show history for (codex, claude, copilot). Omit for all.
+        provider: Option<String>,
+        /// Number of days of history to include
+        #[arg(long, default_value_t = 60)]
+        days: u32,
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
     },
     /// Sync usage data from providers
     Sync {
-        /// Provider to sync (codex, claude, copilot). Omit for all.
+        /// Provider to sync (codex, claude, copilot). Omit for all enabled providers.
         provider: Option<String>,
     },
     /// Manage authentication for providers
@@ -60,18 +81,21 @@ enum Commands {
     },
     /// Show diagnostic information
     Diag,
+    /// Remove the locally installed brim binary (keeps config, state, and credentials)
+    Uninstall,
 }
 
 #[derive(Subcommand)]
 enum AuthAction {
-    /// Show auth status for all providers
+    /// Show auth status for all supported providers
     Status,
     /// Set up authentication for a provider
+    #[command(after_help = AUTH_LOGIN_AFTER_HELP)]
     Login {
         /// Provider to authenticate (codex, claude, copilot)
         provider: String,
     },
-    /// Remove stored credentials for a provider
+    /// Remove brim-managed credentials for a provider, or explain manual logout for provider-managed auth
     Logout {
         /// Provider to remove credentials for
         provider: String,
@@ -83,6 +107,7 @@ enum ConfigAction {
     /// Show current configuration
     Show,
     /// Initialize default configuration file
+    #[command(after_help = CONFIG_INIT_AFTER_HELP)]
     Init,
     /// Open config file in $EDITOR
     Edit,
@@ -150,10 +175,20 @@ async fn main() -> Result<()> {
             provider,
             fresh,
             full,
+            history,
         } => {
             let state = AppState::init()?;
             let engine = state.build_sync_engine();
-            commands::json::run(&engine, provider, fresh, full).await?;
+            commands::json::run(&engine, provider, fresh, full, history).await?;
+        }
+        Commands::History {
+            provider,
+            days,
+            json,
+        } => {
+            let state = AppState::init()?;
+            let engine = state.build_sync_engine();
+            commands::history::run(&engine, provider, days, json).await?;
         }
         Commands::Sync { provider } => {
             let state = AppState::init()?;
@@ -177,6 +212,9 @@ async fn main() -> Result<()> {
         Commands::Diag => {
             let state = AppState::init()?;
             commands::diag::run(&state.paths, &state.config)?;
+        }
+        Commands::Uninstall => {
+            commands::uninstall::run()?;
         }
     }
 

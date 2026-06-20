@@ -50,22 +50,22 @@ pub fn run(paths: &AppPaths, config: &Arc<AppConfig>) -> Result<()> {
 
     // Provider CLI availability
     println!("External tools:");
+    let mut missing_tools = Vec::new();
     for (name, cmd) in [("codex", "codex"), ("claude", "claude"), ("gh", "gh")] {
-        let available = std::process::Command::new("which")
-            .arg(cmd)
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
+        let available = command_in_path(cmd);
         println!(
             "  {}: {}",
             name,
             if available { "found" } else { "not found" }
         );
+        if !available {
+            missing_tools.push(name);
+        }
     }
     println!();
 
     // Local credential files
-    println!("Local credentials:");
+    println!("Local credential discovery:");
     let codex_auth = brim_auth::local_files::find_codex_auth_file();
     println!(
         "  Codex auth.json: {}",
@@ -94,5 +94,52 @@ pub fn run(paths: &AppPaths, config: &Arc<AppConfig>) -> Result<()> {
     }
     println!();
 
+    println!("Summary:");
+    let enabled = config.enabled_provider_ids();
+    if enabled.is_empty() {
+        println!("  Enabled providers: none");
+    } else {
+        println!(
+            "  Enabled providers: {}",
+            enabled
+                .iter()
+                .map(|id| id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    println!(
+        "  Missing tools: {}",
+        if missing_tools.is_empty() {
+            "none".to_string()
+        } else {
+            missing_tools.join(", ")
+        }
+    );
+    println!(
+        "  Config file: {}",
+        if paths.config_file.exists() {
+            "present"
+        } else {
+            "missing"
+        }
+    );
+    if !paths.config_file.exists() {
+        println!("  Next step: run `brim config init`.");
+    } else if enabled.is_empty() {
+        println!(
+            "  Next step: enable a provider in the config, then run `brim auth login <provider>`."
+        );
+    } else {
+        println!("  Next step: run `brim status` or `brim sync`.");
+    }
+    println!();
+
     Ok(())
+}
+
+fn command_in_path(command: &str) -> bool {
+    std::env::var_os("PATH").is_some_and(|path_var| {
+        std::env::split_paths(&path_var).any(|dir| dir.join(command).exists())
+    })
 }

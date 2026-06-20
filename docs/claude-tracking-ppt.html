@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brim · Claude Subscription Tracking · Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* ── reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0d1117;color:#e6edf3;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ── deck / slide system ── */
+.deck{position:relative;width:100vw;height:100vh;overflow:hidden}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:64px 96px;
+  opacity:0;pointer-events:none;
+  transition:opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
+  transform:translateX(40px);
+  overflow:hidden;
+}
+.slide.is-active{opacity:1;pointer-events:auto;transform:translateX(0);z-index:2}
+.slide.is-prev{transform:translateX(-40px);opacity:0}
+
+/* ── shared bg gradient per slide ── */
+.slide::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(60% 50% at 90% 10%,rgba(121,192,255,.1),transparent 60%),
+    radial-gradient(50% 50% at 10% 90%,rgba(126,231,135,.07),transparent 60%);
+}
+.slide>*{position:relative;z-index:1}
+
+/* ── progress bar ── */
+.progress{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#7ee787,#79c0ff,#d2a8ff);transition:width .4s ease;z-index:100}
+/* ── slide counter ── */
+.counter{position:fixed;bottom:18px;right:28px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#6e7681;z-index:100}
+/* ── nav hints ── */
+.nav-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:11px;color:#3d4450;z-index:100;letter-spacing:.06em}
+
+/* ── typography ── */
+.kicker{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#7ee787;letter-spacing:.02em;margin-bottom:12px}
+.kicker::before{content:"> "}
+.h1{font-size:76px;line-height:1.03;font-weight:800;letter-spacing:-.03em;color:#fff;margin-bottom:18px}
+.h2{font-size:52px;font-weight:700;letter-spacing:-.025em;color:#fff;margin-bottom:14px}
+.h3{font-size:26px;font-weight:600;color:#fff;margin-bottom:8px}
+.lede{font-size:21px;line-height:1.55;color:#8b949e;font-weight:300;max-width:64ch}
+.mono{font-family:'JetBrains Mono',monospace}
+.g{background:linear-gradient(120deg,#7ee787 0%,#79c0ff 60%,#d2a8ff 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ── grid ── */
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.mt-s{margin-top:10px}.mt-m{margin-top:20px}.mt-l{margin-top:36px}
+
+/* ── cards ── */
+.card{background:#161b22;border:1px solid rgba(139,148,158,.22);border-radius:14px;padding:22px 24px}
+.card-accent{border-top:3px solid #7ee787}
+.card-blue{border-top:3px solid #79c0ff}
+.card-purple{border-top:3px solid #d2a8ff}
+.card h3{font-size:16px;font-weight:600;color:#fff;margin-bottom:6px}
+.card p{font-size:14px;line-height:1.6;color:#8b949e}
+.card .mono{font-size:12px;color:#7ee787}
+
+/* ── tag ── */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;background:#161b22;border:1px solid rgba(139,148,158,.22);color:#8b949e;margin:3px}
+.tag.green{background:rgba(126,231,135,.1);color:#7ee787;border-color:rgba(126,231,135,.3)}
+.tag.blue{background:rgba(121,192,255,.1);color:#79c0ff;border-color:rgba(121,192,255,.3)}
+.tag.purple{background:rgba(210,168,255,.1);color:#d2a8ff;border-color:rgba(210,168,255,.3)}
+.tag.red{background:rgba(255,123,114,.1);color:#ff7b72;border-color:rgba(255,123,114,.3)}
+
+/* ── terminal block ── */
+.terminal{background:#010409;border:1px solid rgba(139,148,158,.22);border-radius:14px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.65}
+.terminal .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#161b22;border-bottom:1px solid rgba(139,148,158,.15)}
+.terminal .dot{width:11px;height:11px;border-radius:50%}
+.terminal .dot:nth-child(1){background:#ff5f56}
+.terminal .dot:nth-child(2){background:#ffbd2e}
+.terminal .dot:nth-child(3){background:#27c93f}
+.terminal .bar span{color:#6e7681;font-size:11px;margin-left:4px}
+.terminal pre{margin:0;padding:20px 24px;color:#e6edf3;overflow:auto}
+.ck{color:#ff7b72}.cv{color:#d2a8ff}.cs{color:#a5d6ff}.cc{color:#6e7681;font-style:italic}.cn{color:#79c0ff}.cg{color:#7ee787}
+
+/* ── phase list ── */
+.phase{display:flex;gap:18px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed rgba(139,148,158,.15)}
+.phase:last-child{border-bottom:none}
+.phase-num{background:linear-gradient(135deg,#7ee787,#79c0ff);color:#000;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;font-family:'JetBrains Mono',monospace}
+.phase-body strong{color:#fff;font-size:16px}
+.phase-body p{color:#8b949e;font-size:13px;margin-top:4px;line-height:1.5}
+
+/* ── metric box ── */
+.mbox{background:#010409;border:1px solid rgba(139,148,158,.2);border-radius:10px;padding:16px 18px}
+.mbox .ml{color:#6e7681;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.mbox .mv{color:#7ee787;font-size:20px;font-weight:700;margin-top:4px}
+.mbox .md{color:#6e7681;font-size:12px;margin-top:4px}
+
+/* ── agenda row ── */
+.arow{display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px dashed rgba(139,148,158,.15)}
+.arow .an{color:#7ee787;font-family:'JetBrains Mono',monospace;font-size:13px;width:40px;flex:none}
+.arow .at{color:#fff;font-size:20px;font-weight:600;flex:1}
+.arow .ad{color:#6e7681;font-size:12px;font-family:'JetBrains Mono',monospace}
+
+/* ── sparkline ── */
+.sparkline{font-size:22px;letter-spacing:.06em;color:#7ee787;font-family:'JetBrains Mono',monospace}
+.bar-row{display:flex;align-items:center;gap:12px;padding:6px 0}
+.bar-row .bl{color:#8b949e;font-size:13px;width:160px;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.bar-row .bb{height:16px;border-radius:4px;background:linear-gradient(90deg,#7ee787,#79c0ff)}
+.bar-row .bv{color:#6e7681;font-size:12px;font-family:'JetBrains Mono',monospace;margin-left:6px}
+
+/* ── question card ── */
+.qcard{background:#161b22;border:1px solid rgba(139,148,158,.22);border-radius:14px;padding:18px 22px;display:flex;align-items:flex-start;gap:14px}
+.qnum{color:#d2a8ff;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;flex-shrink:0;margin-top:1px}
+.qbody strong{color:#fff;font-size:15px}
+.qbody p{color:#8b949e;font-size:13px;margin-top:5px;line-height:1.5}
+.opts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* ── table ── */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#6e7681;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.07em;padding:8px 10px;border-bottom:1px solid rgba(139,148,158,.2)}
+td{padding:9px 10px;border-bottom:1px solid rgba(139,148,158,.08);color:#c9d1d9}
+td code{font-family:'JetBrains Mono',monospace;font-size:12px;color:#7ee787;background:#010409;padding:2px 6px;border-radius:4px}
+td.dim{color:#6e7681}
+
+/* ── speaker ── */
+.speaker{display:flex;align-items:center;gap:14px;margin-top:28px}
+.speaker .av{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7ee787,#79c0ff,#d2a8ff)}
+.speaker b{display:block;color:#fff;font-size:16px}
+.speaker span{color:#6e7681;font-size:12px;font-family:'JetBrains Mono',monospace}
+
+/* ── note banner ── */
+.note-banner{background:#1a1e0f;border-left:3px solid #ffbd2e;border-radius:0 8px 8px 0;padding:10px 14px;font-size:13px;color:#ffbd2e;margin-top:14px}
+
+/* ── cover accent line ── */
+.cover-line{height:3px;width:120px;background:linear-gradient(90deg,#7ee787,#79c0ff);border-radius:2px;margin-bottom:28px}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ── 1. COVER ── -->
+<section class="slide is-active" data-title="Cover">
+  <div class="cover-line"></div>
+  <p class="kicker">brim · feature plan · 2026-06-20</p>
+  <h1 class="h1">Claude<br><span class="g">Subscription</span><br>Tracking</h1>
+  <p class="lede" style="margin-top:12px">History metrics, burn rate, and trend visualization<br>for Claude quota — built on what's already there.</p>
+  <div class="speaker" style="margin-top:32px">
+    <div class="av"></div>
+    <div><b>Digvijay Mahapatra</b><span>token-usage-tracker-app · brim</span></div>
+  </div>
+  <div style="margin-top:24px">
+    <span class="tag green">Rust CLI/TUI</span>
+    <span class="tag blue">SQLite-backed</span>
+    <span class="tag purple">5 phases</span>
+  </div>
+</section>
+
+<!-- ── 2. AGENDA ── -->
+<section class="slide" data-title="Agenda">
+  <p class="kicker">agenda.toml</p>
+  <h2 class="h2">Plan overview</h2>
+  <div class="mt-m">
+    <div class="arow"><span class="an">01</span><span class="at">Situation — what we already have</span><span class="ad">foundation</span></div>
+    <div class="arow"><span class="an">02</span><span class="at">Claude API data available</span><span class="ad">data layer</span></div>
+    <div class="arow"><span class="an">03</span><span class="at">Derived metrics worth computing</span><span class="ad">analytics</span></div>
+    <div class="arow"><span class="an">04</span><span class="at">New CLI commands</span><span class="ad">interface</span></div>
+    <div class="arow"><span class="an">05</span><span class="at">Display design</span><span class="ad">UX</span></div>
+    <div class="arow"><span class="an">06</span><span class="at">5-phase delivery plan</span><span class="ad">execution</span></div>
+    <div class="arow"><span class="an">07</span><span class="at">Open questions</span><span class="ad">decisions needed</span></div>
+  </div>
+</section>
+
+<!-- ── 3. SITUATION ── -->
+<section class="slide" data-title="Situation">
+  <p class="kicker">// situation</p>
+  <h2 class="h2">History is already<br><span class="g">accumulating.</span></h2>
+  <p class="lede">Every <span class="mono" style="color:#7ee787">brim sync</span> stores a full <span class="mono" style="color:#7ee787">UsageSnapshot</span> in SQLite. The data is there — we just haven't built the read path.</p>
+  <div class="grid g3 mt-l">
+    <div class="mbox">
+      <div class="ml">Already exists</div>
+      <div class="mv">SQLite history</div>
+      <div class="md">Full snapshot JSON per sync. snapshots_in_range() already works.</div>
+    </div>
+    <div class="mbox">
+      <div class="ml">Already exists</div>
+      <div class="mv" style="color:#79c0ff">Per-model data</div>
+      <div class="md">five_hour window broken down per model in the OAuth API response.</div>
+    </div>
+    <div class="mbox">
+      <div class="ml">Missing</div>
+      <div class="mv" style="color:#ff7b72">History commands</div>
+      <div class="md">No CLI surface to query, compute, or display trends from stored snapshots.</div>
+    </div>
+  </div>
+  <div class="note-banner mt-m">Storage: <strong>no new tables needed.</strong> Add one index on (provider, strategy, fetched_at) to filter out fallback stubs efficiently.</div>
+</section>
+
+<!-- ── 4. DATA ── -->
+<section class="slide" data-title="API Data">
+  <p class="kicker">// claude oauth usage api</p>
+  <h2 class="h2" style="font-size:42px">What Claude exposes per sync</h2>
+  <div class="grid g2 mt-m" style="align-items:start;gap:16px">
+    <table>
+      <tr><th>Field</th><th>Window</th></tr>
+      <tr><td><code>five_hour.used / limit</code></td><td class="dim">5-hour session</td></tr>
+      <tr><td><code>five_hour.percent_remaining</code></td><td class="dim">0–100, direct</td></tr>
+      <tr><td><code>five_hour.resets_at</code></td><td class="dim">RFC3339 next reset</td></tr>
+      <tr><td><code>seven_day.used / limit</code></td><td class="dim">7-day rolling</td></tr>
+      <tr><td><code>seven_day.percent_remaining</code></td><td class="dim">direct from API</td></tr>
+      <tr><td><code>seven_day.resets_at</code></td><td class="dim">weekly rollover time</td></tr>
+      <tr><td><code>models[].five_hour</code></td><td class="dim">per-model session</td></tr>
+      <tr><td><code>plan</code>, <code>tier</code></td><td class="dim">e.g. "Claude" / "Pro"</td></tr>
+    </table>
+    <div>
+      <div class="terminal">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>GET /api/oauth/usage</span></div>
+        <pre><span class="cc">// raw response shape</span>
+{
+  <span class="cs">"plan"</span>: <span class="cs">"Claude"</span>, <span class="cs">"tier"</span>: <span class="cs">"Pro"</span>,
+  <span class="cs">"five_hour"</span>: {
+    <span class="cs">"used"</span>: <span class="cn">18</span>, <span class="cs">"limit"</span>: <span class="cn">45</span>,
+    <span class="cs">"percent_remaining"</span>: <span class="cn">60.0</span>,
+    <span class="cs">"resets_at"</span>: <span class="cs">"2026-06-20T..."</span>
+  },
+  <span class="cs">"seven_day"</span>: { <span class="cc">/* same shape */</span> },
+  <span class="cs">"models"</span>: [
+    { <span class="cs">"model"</span>: <span class="cs">"claude-opus-4"</span>,
+      <span class="cs">"five_hour"</span>: { <span class="cc">/* ... */</span> } }
+  ]
+}</pre>
+      </div>
+      <div class="note-banner" style="font-size:12px">API is experimental — use Option everywhere, degrade gracefully</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. METRICS ── -->
+<section class="slide" data-title="Metrics">
+  <p class="kicker">// derived metrics</p>
+  <h2 class="h2" style="font-size:42px">What we compute from history</h2>
+  <div class="grid g3 mt-m" style="gap:14px">
+    <div class="card card-accent">
+      <h3>Session burn rate</h3>
+      <p>Requests-per-hour from delta between consecutive snapshots.</p>
+      <div class="mono mt-s" style="font-size:12px;color:#7ee787">Δused / Δtime_hrs</div>
+    </div>
+    <div class="card card-accent">
+      <h3>Time-to-empty</h3>
+      <p>At current pace, how long until session quota hits 0. Capped at reset time.</p>
+      <div class="mono mt-s" style="font-size:12px;color:#7ee787">remaining / burn_rate</div>
+    </div>
+    <div class="card card-blue">
+      <h3>Weekly trend</h3>
+      <p>Plot of <code style="font-size:11px">seven_day.used</code> across past N weekly cycles.</p>
+    </div>
+    <div class="card card-blue">
+      <h3>Session depth</h3>
+      <p>Median + p90 of peak <code style="font-size:11px">five_hour.used</code> per session over history.</p>
+    </div>
+    <div class="card card-purple">
+      <h3>Weekly forecast</h3>
+      <p>4-week median daily usage → project remaining % at end of week. Needs ≥2 weeks of data.</p>
+    </div>
+    <div class="card card-purple">
+      <h3>Per-model split</h3>
+      <p>Distribution across Opus / Sonnet / Haiku from historical model buckets.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6. COMMANDS ── -->
+<section class="slide" data-title="Commands">
+  <p class="kicker">// new cli surface</p>
+  <h2 class="h2" style="font-size:42px">Three command changes</h2>
+  <div class="grid g2 mt-m" style="align-items:start;gap:20px">
+    <div>
+      <div class="card card-accent" style="margin-bottom:14px">
+        <h3><span style="color:#7ee787">NEW</span> &nbsp;brim history [provider]</h3>
+        <p>Sparkline trend + computed metrics for the past 7 days (or <span class="mono" style="font-size:12px">--days N</span>). All enabled providers, or one.</p>
+        <div class="opts mt-s">
+          <span class="tag green">brim history claude</span>
+          <span class="tag green">brim history --days 30</span>
+        </div>
+      </div>
+      <div class="card card-blue" style="margin-bottom:14px">
+        <h3><span style="color:#79c0ff">EXTEND</span> &nbsp;brim json --history</h3>
+        <p>Machine-readable metrics under a <span class="mono" style="font-size:12px">history</span> key. Composable with existing consumers.</p>
+        <div class="opts mt-s">
+          <span class="tag blue">brim json claude --history</span>
+        </div>
+      </div>
+      <div class="card card-purple">
+        <h3><span style="color:#d2a8ff">EXTEND</span> &nbsp;brim status</h3>
+        <p>Inline burn rate + time-to-empty for the current session. One line added to existing status render.</p>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>brim history claude</span></div>
+      <pre><span class="cg">Claude</span>  ·  Pro  ·  last 7 days
+
+<span class="cc">Weekly usage</span>
+<span class="cg">▁▂▃▄▅▆█▇▆▅▃</span>  45% used  (resets 3d 14h)
+
+<span class="cc">Session (5h)</span>
+<span class="cg">████████░░</span>  78% remaining
+<span class="cc">burn: 2.4 req/hr  ·  ~2h 10m at this pace</span>
+
+<span class="cc">Per-model (this session)</span>
+<span class="cs">opus-4.8    </span><span class="cg">▓▓▓▓▓▓▓░░░</span>  62%
+<span class="cs">sonnet-4.6  </span><span class="cg">▓▓▓░░░░░░░</span>  31%
+<span class="cs">haiku-4.5   </span><span class="cg">▓░░░░░░░░░</span>   7%
+
+<span class="cc">4-week history</span>
+<span class="cs">week -3  </span><span class="cg">████████░░</span>  78%
+<span class="cs">week -2  </span><span class="cg">██████░░░░</span>  61%
+<span class="cs">week -1  </span><span class="cg">███████░░░</span>  70%
+<span class="cs">this wk  </span><span class="cg">████░░░░░░</span>  45% <span class="cv">←</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── 7. PHASES ── -->
+<section class="slide" data-title="Phases">
+  <p class="kicker">// delivery</p>
+  <h2 class="h2">5-phase plan</h2>
+  <div class="mt-m">
+    <div class="phase">
+      <div class="phase-num">1</div>
+      <div class="phase-body">
+        <strong>Metrics engine — <span class="mono" style="font-size:13px">crates/core/src/history.rs</span></strong>
+        <p>Pure functions: burn_rate, time_to_empty, weekly_peaks, model_split. Input: &amp;[UsageSnapshot]. No I/O, fully testable.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">2</div>
+      <div class="phase-body">
+        <strong>DB helper — <span class="mono" style="font-size:13px">snapshots_for_history(provider, days)</span></strong>
+        <p>One new method on Database. Filters to strategy="oauth_usage" to skip fallback stubs. Reuses snapshots_in_range.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">3</div>
+      <div class="phase-body">
+        <strong><span class="mono" style="font-size:13px">brim history</span> command — <span class="mono" style="font-size:13px">crates/cli/src/commands/history.rs</span></strong>
+        <p>DB → metrics → terminal render. Sparklines via Unicode block chars (no new deps). Supports --days, --json.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">4</div>
+      <div class="phase-body">
+        <strong>Inline burn rate in <span class="mono" style="font-size:13px">brim status</span></strong>
+        <p>Query last ~2h of snapshots, compute burn rate, append to existing status output. One-liner addition.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">5</div>
+      <div class="phase-body">
+        <strong><span class="mono" style="font-size:13px">brim json --history</span> flag</strong>
+        <p>Extend existing json command with a history key when the flag is passed. Reuses phase-1 metrics engine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8. QUESTIONS ── -->
+<section class="slide" data-title="Open Questions">
+  <p class="kicker">// decisions needed</p>
+  <h2 class="h2">4 open questions</h2>
+  <div class="grid g2 mt-m" style="gap:14px">
+    <div class="qcard">
+      <div class="qnum">Q1</div>
+      <div class="qbody">
+        <strong>TUI panel?</strong>
+        <p>Should history sparkline appear in the TUI (crates/tui), or is the CLI output enough for now?</p>
+        <div class="opts">
+          <span class="tag green">CLI first</span>
+          <span class="tag blue">TUI panel too</span>
+        </div>
+      </div>
+    </div>
+    <div class="qcard">
+      <div class="qnum">Q2</div>
+      <div class="qbody">
+        <strong>Default history window?</strong>
+        <p>7 days aligns with Claude's weekly window. 30 days shows longer trends but needs history to accumulate.</p>
+        <div class="opts">
+          <span class="tag green">7 days</span>
+          <span class="tag blue">30 days</span>
+          <span class="tag">All retained</span>
+        </div>
+      </div>
+    </div>
+    <div class="qcard">
+      <div class="qnum">Q3</div>
+      <div class="qbody">
+        <strong>Claude only, or all providers?</strong>
+        <p>Metrics engine works generically, but each provider has different bucket names. Scope now or later?</p>
+        <div class="opts">
+          <span class="tag green">Claude first</span>
+          <span class="tag blue">Generic now</span>
+        </div>
+      </div>
+    </div>
+    <div class="qcard">
+      <div class="qnum">Q4</div>
+      <div class="qbody">
+        <strong>Stale burn rate?</strong>
+        <p>Burn rate is only meaningful from recent snapshots. If last snapshot is &gt;2h old — show or hide?</p>
+        <div class="opts">
+          <span class="tag green">Hide if &gt;2h old</span>
+          <span class="tag blue">Show with stale label</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter">1 / 8</div>
+<div class="nav-hint">← → to navigate · F fullscreen</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+function go(n) {
+  slides[cur].classList.remove('is-active');
+  slides[cur].classList.add('is-prev');
+  cur = (n + total) % total;
+  slides.forEach((s, i) => { if (i !== cur) s.classList.remove('is-prev'); });
+  slides[cur].classList.add('is-active');
+  slides[cur].classList.remove('is-prev');
+  document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') go(cur + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') go(cur - 1);
+  if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End') go(total - 1);
+});
+
+// touch
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+});
+
+// init progress
+document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>

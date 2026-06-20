@@ -19,6 +19,37 @@ cargo build --release
 ./target/release/brim --help
 ```
 
+## Install
+
+Install `brim` locally into `~/.local/bin`:
+
+```bash
+./install.sh
+```
+
+You can override the install prefix:
+
+```bash
+PREFIX=/tmp/brim-test ./install.sh
+```
+
+## Uninstall
+
+Remove the locally installed binary:
+
+```bash
+brim uninstall
+```
+
+This removes only the installed `brim` binary. It does not remove config,
+state, database contents, or stored credentials.
+
+If you installed via Cargo instead, use:
+
+```bash
+cargo uninstall brim
+```
+
 ## Quick Start
 
 ```bash
@@ -39,11 +70,12 @@ brim status
 - `brim auth status|login|logout` manages provider authentication
 - `brim config show|init|edit` manages local config
 - `brim diag` prints diagnostic information for local setup issues
+- `brim uninstall` removes the locally installed binary
 
 ## Configuration
 
 - Linux config path: `~/.config/brim/config.toml`
-- Linux state path: `~/.local/state/brim/app.db`
+- Linux state path: `~/.local/share/state/brim/app.db`
 - Paths are platform-dependent outside Linux
 - Providers are disabled by default until you enable and configure them
 
@@ -142,6 +174,12 @@ Use from custom apps:
 - Read a single provider window directly from `.usage.<provider>.<window>`
 - Trigger alerts when any provider drops below a threshold
 - Feed `brim json` or `brim json --full` into tmux, i3blocks, SketchyBar, Polybar, or a local web app
+
+Notes on command scope:
+
+- `brim status` and `brim auth status` without a provider show all supported providers
+- `brim sync` without a provider targets enabled providers only
+- `brim json` without a provider returns usage for the providers currently included in machine-readable output
 
 ## Community
 

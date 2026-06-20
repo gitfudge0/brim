@@ -31,6 +31,14 @@ pub fn init() -> Result<()> {
 
 pub fn edit() -> Result<()> {
     let paths = AppPaths::resolve().map_err(|e| anyhow::anyhow!("{}", e))?;
+    paths.ensure_dirs().map_err(|e| anyhow::anyhow!("{}", e))?;
+    if !paths.config_file.exists() {
+        let config = AppConfig::default();
+        config
+            .save(&paths.config_file)
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+        println!("Created default config at {}", paths.config_file.display());
+    }
     let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vi".into());
     let status = std::process::Command::new(&editor)
         .arg(&paths.config_file)

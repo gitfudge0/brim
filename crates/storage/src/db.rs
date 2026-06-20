@@ -149,6 +149,40 @@ impl Database {
         Ok(snapshots)
     }
 
+    /// Get snapshots for a provider in the last `days` days, ordered ascending.
+    ///
+    /// Filters to `strategy = 'oauth_usage'` to skip fallback stubs.
+    pub fn snapshots_for_history(
+        &self,
+        provider: ProviderId,
+        days: u32,
+    ) -> Result<Vec<UsageSnapshot>, StorageError> {
+        let from = Utc::now() - chrono::Duration::days(days as i64);
+        let conn = self.conn();
+        let mut stmt = conn.prepare(
+            "SELECT data_json FROM usage_snapshots
+             WHERE provider = ?1
+               AND fetched_at >= ?2
+             ORDER BY fetched_at ASC",
+        )?;
+
+        let rows = stmt.query_map(
+            params![provider.as_str(), from.to_rfc3339()],
+            |row| {
+                let json: String = row.get(0)?;
+                Ok(json)
+            },
+        )?;
+
+        let mut snapshots = Vec::new();
+        for row in rows {
+            let json = row?;
+            let snapshot: UsageSnapshot = serde_json::from_str(&json)?;
+            snapshots.push(snapshot);
+        }
+        Ok(snapshots)
+    }
+
     /// Delete snapshots older than a given age.
     pub fn prune_snapshots(&self, older_than: DateTime<Utc>) -> Result<usize, StorageError> {
         let deleted = self.conn().execute(

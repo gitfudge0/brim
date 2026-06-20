@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use anyhow::Result;
 use brim_core::confidence::{Confidence, Labeled};
+use brim_core::history::{compute_history_metrics, HistoryMetrics};
 use brim_core::models::{AuthState, ProviderStatus, QuotaBucket, UsageSnapshot};
 use brim_core::time_window::WindowKind;
 use brim_providers::sync_engine::SyncEngine;
@@ -22,6 +23,8 @@ struct JsonProviderSummary {
     notes: Vec<String>,
     lowest_bucket: Option<JsonLowestBucketSummary>,
     buckets: Vec<JsonBucketSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    history: Option<HistoryMetrics>,
 }
 
 #[derive(Debug, Serialize)]
@@ -60,6 +63,8 @@ struct CompactProviderUsage {
     monthly: Option<CompactWindowSummary>,
     #[serde(skip_serializing_if = "Option::is_none")]
     daily: Option<CompactWindowSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    history: Option<HistoryMetrics>,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq)]
@@ -73,12 +78,45 @@ pub async fn run(
     provider: Option<String>,
     fresh: bool,
     full: bool,
+    history: bool,
 ) -> Result<()> {
-    let statuses = crate::commands::status::collect_statuses(engine, provider, fresh).await?;
-    let json = if full {
-        serde_json::to_string_pretty(&summarize_statuses_full(statuses))?
+    let statuses = crate::commands::status::collect_statuses(engine, provider.clone(), fresh).await?;
+
+    // Build per-provider history metrics if requested.
+    let history_map: BTreeMap<String, HistoryMetrics> = if history {
+        let ids: Vec<brim_core::models::ProviderId> = match &provider {
+            Some(name) => vec![crate::commands::parse_provider_arg(name)?],
+            None => engine.config().enabled_provider_ids(),
+        };
+        ids.into_iter()
+            .filter_map(|id| {
+                engine
+                    .db()
+                    .snapshots_for_history(id, 60)
+                    .ok()
+                    .map(|snaps| (id.as_str().to_string(), compute_history_metrics(&snaps)))
+            })
+            .collect()
     } else {
-        serde_json::to_string_pretty(&summarize_statuses_compact(statuses))?
+        BTreeMap::new()
+    };
+
+    let json = if full {
+        let mut summaries = summarize_statuses_full(statuses);
+        if history {
+            for s in &mut summaries {
+                s.history = history_map.get(&s.provider).cloned();
+            }
+        }
+        serde_json::to_string_pretty(&summaries)?
+    } else {
+        let mut compact = summarize_statuses_compact(statuses);
+        if history {
+            for (key, usage) in &mut compact.usage {
+                usage.history = history_map.get(key).cloned();
+            }
+        }
+        serde_json::to_string_pretty(&compact)?
     };
     println!("{json}");
     Ok(())
@@ -142,6 +180,7 @@ impl From<ProviderStatus> for JsonProviderSummary {
                     notes: snapshot.notes.clone(),
                     lowest_bucket,
                     buckets,
+                    history: None,
                 }
             }
             None => Self {
@@ -156,6 +195,7 @@ impl From<ProviderStatus> for JsonProviderSummary {
                 notes: Vec::new(),
                 lowest_bucket: None,
                 buckets: Vec::new(),
+                history: None,
             },
         }
     }

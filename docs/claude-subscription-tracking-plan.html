@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>brim · Claude Subscription Tracking Plan</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #c78aff;
+    --accent2: #7ecaff;
+    --accent3: #6bffb8;
+    --text: #e2e4f0;
+    --muted: #7a7f9a;
+    --warn: #ffbe7a;
+    --danger: #ff7a7a;
+    --code-bg: #13151f;
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Cascadia Code', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem 1rem; }
+  .page { max-width: 860px; margin: 0 auto; }
+  h1 { color: var(--accent); font-size: 1.6rem; letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+  h2 { color: var(--accent2); font-size: 1.1rem; margin: 2.5rem 0 0.8rem; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+  h3 { color: var(--accent3); font-size: 0.95rem; margin: 1.4rem 0 0.5rem; }
+  p { margin-bottom: 0.8rem; color: var(--text); }
+  .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+  code { background: var(--code-bg); color: var(--accent3); padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.9em; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.2rem; overflow-x: auto; margin: 0.8rem 0 1rem; font-size: 0.85rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; color: var(--text); }
+  pre .key { color: var(--accent3); }
+  pre .val { color: var(--accent2); }
+  pre .comment { color: var(--muted); }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.8rem; }
+  li { margin-bottom: 0.3rem; }
+  li code { font-size: 0.85em; }
+  .tag { display: inline-block; font-size: 0.72rem; padding: 0.1em 0.5em; border-radius: 20px; font-weight: 600; letter-spacing: 0.05em; vertical-align: middle; margin-left: 0.4em; }
+  .tag.exists { background: #1e3a2a; color: var(--accent3); border: 1px solid #2d6643; }
+  .tag.new { background: #2a1e3a; color: var(--accent); border: 1px solid #6643a6; }
+  .tag.extend { background: #1e2a3a; color: var(--accent2); border: 1px solid #2d4a80; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.4rem; margin: 0.8rem 0; }
+  .card h3 { margin-top: 0; }
+  .grid { display: grid; gap: 0.8rem; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 620px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .metric-box { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem 1rem; }
+  .metric-box .label { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .metric-box .value { color: var(--accent); font-size: 1.1rem; margin-top: 0.2rem; }
+  .metric-box .desc { color: var(--muted); font-size: 0.78rem; margin-top: 0.3rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.8rem 0; }
+  th { text-align: left; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+  td { padding: 0.45rem 0.6rem; border-bottom: 1px solid #1f2230; vertical-align: top; }
+  td code { font-size: 0.82em; }
+  .phase { display: flex; gap: 0.8rem; align-items: flex-start; margin: 0.7rem 0; }
+  .phase-num { background: var(--accent); color: #000; border-radius: 50%; width: 1.6rem; height: 1.6rem; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 0.1rem; }
+  .phase-body { flex: 1; }
+  .phase-body strong { color: var(--text); }
+  .phase-body p { color: var(--muted); font-size: 0.88rem; margin: 0.2rem 0 0; }
+  .note { background: #1a1e0f; border-left: 3px solid var(--warn); padding: 0.7rem 1rem; border-radius: 0 6px 6px 0; margin: 0.8rem 0; font-size: 0.88rem; color: var(--warn); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.4rem; margin-bottom: 2rem; }
+  .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.6rem; }
+  .toc ol { margin: 0; }
+  .toc li { font-size: 0.88rem; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .sparkline { font-family: monospace; color: var(--accent3); letter-spacing: 0.05em; font-size: 1.1rem; }
+  .status-line { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0; }
+  .pill { font-size: 0.78rem; padding: 0.2em 0.7em; border-radius: 20px; background: var(--code-bg); border: 1px solid var(--border); }
+  .pill.green { color: var(--accent3); border-color: #2d6643; }
+  .pill.blue { color: var(--accent2); border-color: #2d4a80; }
+  .pill.purple { color: var(--accent); border-color: #6643a6; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>brim · Claude Subscription Tracking</h1>
+  <p class="subtitle">Design plan — 2026-06-20 · for review before implementation</p>
+
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#situation">Situation: what we already have</a></li>
+      <li><a href="#data">What data Claude exposes</a></li>
+      <li><a href="#metrics">Derived metrics worth computing</a></li>
+      <li><a href="#storage">Storage changes</a></li>
+      <li><a href="#commands">New CLI commands</a></li>
+      <li><a href="#display">Display design</a></li>
+      <li><a href="#phases">Phased delivery</a></li>
+      <li><a href="#questions">Open questions for you</a></li>
+    </ol>
+  </div>
+
+  <!-- ===== SITUATION ===== -->
+  <h2 id="situation">1 · Situation: what we already have</h2>
+
+  <p>
+    History is <strong>already accumulating</strong>. Every <code>brim sync</code> writes a full
+    <code>UsageSnapshot</code> JSON blob to <code>usage_snapshots</code> in SQLite.
+    The DB already has <code>snapshots_in_range(provider, from, to)</code>.
+    There is no new storage primitive needed — we query what's there.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="metric-box">
+      <div class="label">Already exists</div>
+      <div class="value">SQLite history</div>
+      <div class="desc">Full snapshot per sync, queryable by provider + time range</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">Already exists</div>
+      <div class="value">Per-model data</div>
+      <div class="desc">five_hour window broken down per model in the OAuth API response</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">Missing</div>
+      <div class="value">History commands</div>
+      <div class="desc">No CLI surface to query, compute, or display trends from stored snapshots</div>
+    </div>
+  </div>
+
+  <!-- ===== DATA ===== -->
+  <h2 id="data">2 · What data Claude exposes</h2>
+
+  <p>Fields available per sync from <code>GET /api/oauth/usage</code>:</p>
+
+  <table>
+    <tr><th>Field</th><th>Window</th><th>Notes</th></tr>
+    <tr><td><code>five_hour.used</code></td><td>5-hour session</td><td>Requests used in current session window</td></tr>
+    <tr><td><code>five_hour.limit</code></td><td>5-hour session</td><td>Session cap (varies by plan)</td></tr>
+    <tr><td><code>five_hour.percent_remaining</code></td><td>5-hour session</td><td>Direct from API, 0–100</td></tr>
+    <tr><td><code>five_hour.resets_at</code></td><td>5-hour session</td><td>RFC3339 timestamp of next reset</td></tr>
+    <tr><td><code>seven_day.used</code></td><td>7-day rolling</td><td>Weekly premium request count</td></tr>
+    <tr><td><code>seven_day.limit</code></td><td>7-day rolling</td><td>Weekly cap</td></tr>
+    <tr><td><code>seven_day.percent_remaining</code></td><td>7-day rolling</td><td>Direct from API</td></tr>
+    <tr><td><code>seven_day.resets_at</code></td><td>7-day rolling</td><td>When the weekly window rolls over</td></tr>
+    <tr><td><code>models[].five_hour</code></td><td>5-hour session</td><td>Per-model breakdown (opus, sonnet, haiku…)</td></tr>
+    <tr><td><code>plan</code>, <code>tier</code></td><td>—</td><td>Subscription name/tier ("Claude" / "Pro")</td></tr>
+    <tr><td><code>subscriptionType</code></td><td>—</td><td>From local credentials file as fallback</td></tr>
+  </table>
+
+  <div class="note">
+    The API is marked experimental. Limit values and model keys may change. Build with that in mind — use
+    <code>Option</code> everywhere, degrade gracefully, and label derived metrics as <code>derived</code>.
+  </div>
+
+  <!-- ===== METRICS ===== -->
+  <h2 id="metrics">3 · Derived metrics worth computing</h2>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Session burn rate</h3>
+      <p>Requests-per-hour within the current or recent 5-hour window.
+        Computed from the delta between two consecutive snapshots divided by elapsed time.</p>
+      <pre><code><span class="key">burn_rate</span> = <span class="val">Δused / Δtime_hours</span>
+<span class="comment">// e.g. 3.2 req/hr for this session</span></code></pre>
+    </div>
+    <div class="card">
+      <h3>Session time-to-empty</h3>
+      <p>At current burn rate, how long until the 5-hour session quota hits 0.
+        Capped at the session reset time (meaningless to project past it).</p>
+      <pre><code><span class="key">tte</span> = <span class="val">remaining / burn_rate</span>
+<span class="comment">// "~1h 20m at current pace"</span></code></pre>
+    </div>
+    <div class="card">
+      <h3>Weekly consumption trend</h3>
+      <p>Plot of weekly <code>used</code> across past N 7-day windows.
+        One data point = the <code>used</code> value at the start of each weekly cycle.</p>
+    </div>
+    <div class="card">
+      <h3>Typical session depth</h3>
+      <p>Median and p90 of <code>five_hour.used</code> at the peak of each historical session.
+        Tells you how hard you actually push sessions vs. the limit.</p>
+    </div>
+    <div class="card">
+      <h3>Weekly forecast</h3>
+      <p>Using rolling 4-week median daily usage, project remaining % at end of current week.
+        Only shown when ≥2 weeks of history exist. Labeled <code>derived</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Per-model split</h3>
+      <p>Distribution of session usage across Opus / Sonnet / Haiku from historical model buckets.
+        Useful for seeing which model is actually eating quota.</p>
+    </div>
+  </div>
+
+  <!-- ===== STORAGE ===== -->
+  <h2 id="storage">4 · Storage changes</h2>
+
+  <p>
+    <strong>No new tables needed.</strong> All metrics are computed on-the-fly from existing snapshots.
+    The only addition is one index to make range queries fast as history grows.
+  </p>
+
+  <pre><code><span class="comment">-- Add to migrate() if not already present</span>
+<span class="key">CREATE INDEX IF NOT EXISTS</span> idx_snapshots_provider_strategy
+  <span class="key">ON</span> usage_snapshots(provider, strategy, fetched_at <span class="key">DESC</span>);
+<span class="comment">
+-- Allows efficient filtering to only oauth_usage snapshots for Claude
+-- (skips local_credentials fallback rows that have no bucket data)</span></code></pre>
+
+  <p>
+    The existing <code>prune_after_days</code> config (default 30) already limits unbounded growth.
+    History commands should respect this — no point computing trends over data that's been pruned.
+  </p>
+
+  <!-- ===== COMMANDS ===== -->
+  <h2 id="commands">5 · New CLI commands</h2>
+
+  <h3><code>brim history [provider]</code> <span class="tag new">new</span></h3>
+  <p>Shows a sparkline trend of usage over the past 7 days (or N days with <code>--days N</code>), plus computed metrics.</p>
+  <pre><code>brim history claude
+brim history claude --days 30
+brim history           <span class="comment"># all enabled providers</span></code></pre>
+
+  <h3><code>brim json --history</code> <span class="tag extend">extend</span></h3>
+  <p>Machine-readable version. Returns metrics as a JSON object alongside current usage. Composable with existing <code>brim json</code> consumers.</p>
+  <pre><code>brim json claude --history</code></pre>
+
+  <h3><code>brim status</code> enhancements <span class="tag extend">extend</span></h3>
+  <p>Add one line to the existing status output: burn rate and time-to-empty for the current session. No new command needed — these are the most actionable numbers and belong alongside current %.</p>
+
+  <!-- ===== DISPLAY ===== -->
+  <h2 id="display">6 · Display design</h2>
+
+  <h3>Terminal output for <code>brim history claude</code></h3>
+
+  <div class="card">
+    <pre style="margin:0"><code>  <span style="color:#c78aff">Claude</span>  ·  Pro  ·  last 7 days
+
+  Weekly usage
+  <span class="sparkline">▁▂▃▄▅▆█▇▆▅▃▂▁</span>   45% used this week  (resets in 3d 14h)
+
+  Session (5h)
+  <span style="color:#6bffb8">████████░░</span>  78% remaining  ·  burn: 2.4 req/hr  ·  ~2h 10m at this pace
+
+  Per-model (this session)
+  opus-4        ▓▓▓▓▓▓▓░░░   62%
+  sonnet-4.5    ▓▓▓░░░░░░░   31%
+  haiku-4.5     ▓░░░░░░░░░    7%
+
+  7-day history  (last 4 weeks)
+  week -3   ████████░░   78%
+  week -2   ██████░░░░   61%
+  week -1   ███████░░░   70%
+  this wk   ████░░░░░░   45%  ←
+</code></pre>
+  </div>
+
+  <h3>JSON output for <code>brim json claude --history</code></h3>
+
+  <pre><code>{
+  <span class="key">"provider"</span>: <span class="val">"claude"</span>,
+  <span class="key">"current"</span>: { <span class="comment">/* existing usage object */</span> },
+  <span class="key">"history"</span>: {
+    <span class="key">"window_days"</span>: <span class="val">7</span>,
+    <span class="key">"snapshot_count"</span>: <span class="val">42</span>,
+    <span class="key">"session"</span>: {
+      <span class="key">"burn_rate_req_per_hr"</span>: <span class="val">2.4</span>,
+      <span class="key">"time_to_empty_secs"</span>: <span class="val">7800</span>,
+      <span class="key">"median_session_peak_used"</span>: <span class="val">18</span>,
+      <span class="key">"p90_session_peak_used"</span>: <span class="val">34</span>
+    },
+    <span class="key">"weekly"</span>: {
+      <span class="key">"weeks"</span>: [
+        { <span class="key">"week_start"</span>: <span class="val">"2026-06-02"</span>, <span class="key">"peak_used"</span>: <span class="val">78</span>, <span class="key">"limit"</span>: <span class="val">100</span> },
+        { <span class="key">"week_start"</span>: <span class="val">"2026-06-09"</span>, <span class="key">"peak_used"</span>: <span class="val">61</span>, <span class="key">"limit"</span>: <span class="val">100</span> },
+        { <span class="key">"week_start"</span>: <span class="val">"2026-06-16"</span>, <span class="key">"peak_used"</span>: <span class="val">45</span>, <span class="key">"limit"</span>: <span class="val">100</span> }
+      ],
+      <span class="key">"forecast_end_of_week_pct"</span>: <span class="val">0.68</span>  <span class="comment">// derived</span>
+    }
+  }
+}</code></pre>
+
+  <!-- ===== PHASES ===== -->
+  <h2 id="phases">7 · Phased delivery</h2>
+
+  <div class="phase">
+    <div class="phase-num">1</div>
+    <div class="phase-body">
+      <strong>Metrics engine in <code>brim_core</code></strong>
+      <p>New file <code>crates/core/src/history.rs</code> — pure functions: <code>burn_rate</code>, <code>time_to_empty</code>, <code>weekly_peaks</code>, <code>model_split</code>. Input: <code>&[UsageSnapshot]</code>. Output: a <code>HistoryMetrics</code> struct. No I/O, fully testable.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">2</div>
+    <div class="phase-body">
+      <strong>DB query helper in <code>brim_storage</code></strong>
+      <p>One new method on <code>Database</code>: <code>snapshots_for_history(provider, days) → Vec&lt;UsageSnapshot&gt;</code>. Filters to <code>strategy = "oauth_usage"</code> so fallback stubs don't pollute metrics. Reuses existing <code>snapshots_in_range</code>.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">3</div>
+    <div class="phase-body">
+      <strong><code>brim history</code> CLI command</strong>
+      <p>New <code>crates/cli/src/commands/history.rs</code>. Calls DB → metrics → renders terminal output. Sparklines via Unicode block chars (no deps). Respects <code>--days</code>, <code>--json</code>.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">4</div>
+    <div class="phase-body">
+      <strong>Inline burn rate in <code>brim status</code></strong>
+      <p>Extend existing <code>status</code> command to show burn rate + time-to-empty for the current session by querying the last ~2h of snapshots. One-liner addition to the status render path.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">5</div>
+    <div class="phase-body">
+      <strong><code>brim json --history</code></strong>
+      <p>Extend the existing json command to include a <code>history</code> key when the flag is passed. Reuses the same metrics engine from phase 1.</p>
+    </div>
+  </div>
+
+  <!-- ===== QUESTIONS ===== -->
+  <h2 id="questions">8 · Open questions for you</h2>
+
+  <div class="card">
+    <h3>Q1 — TUI panel?</h3>
+    <p>
+      The app has a <code>crates/tui</code>. Should the history sparkline also appear in the TUI, or is
+      the CLI output enough for now? TUI means a Ratatui chart widget; more work but more interactive.
+    </p>
+    <div class="status-line">
+      <span class="pill green">CLI first (default)</span>
+      <span class="pill blue">TUI panel too</span>
+      <span class="pill purple">TUI only</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Q2 — History window default</h3>
+    <p>
+      What's the default lookback for <code>brim history</code>? 7 days aligns with the Claude weekly window.
+      30 days shows longer trends but needs more history to accumulate first.
+    </p>
+    <div class="status-line">
+      <span class="pill green">7 days (default)</span>
+      <span class="pill blue">30 days</span>
+      <span class="pill purple">Always show all retained data</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Q3 — Scope: Claude only or all providers?</h3>
+    <p>
+      Codex and Copilot also store snapshots. The metrics engine would work generically, but each provider
+      exposes different bucket names. Start Claude-only and generalise later, or build generic from the start?
+    </p>
+    <div class="status-line">
+      <span class="pill green">Claude first, generalise later</span>
+      <span class="pill blue">Generic from the start</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Q4 — Burn rate freshness</h3>
+    <p>
+      Burn rate is only useful when there are recent snapshots (last 1–2h). If the most recent snapshot is
+      old, should we show burn rate as stale/unavailable, or always show whatever we can compute?
+    </p>
+    <div class="status-line">
+      <span class="pill green">Hide if latest snapshot &gt;2h old</span>
+      <span class="pill blue">Show with stale label</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p style="color:var(--muted); font-size:0.8rem;">
+    ponytail: no new storage tables, no new deps — block chars cover sparklines, existing DB query covers history retrieval.
+    Add TUI chart only if Q1 says yes.
+  </p>
+
+</div>
+</body>
+</html>

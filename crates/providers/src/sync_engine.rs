@@ -242,6 +242,11 @@ impl SyncEngine {
     pub fn db(&self) -> &Database {
         &self.db
     }
+
+    /// Access the application config.
+    pub fn config(&self) -> &AppConfig {
+        self.config.as_ref()
+    }
 }
 
 #[cfg(test)]

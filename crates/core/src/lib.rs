@@ -6,6 +6,7 @@
 
 pub mod confidence;
 pub mod error;
+pub mod history;
 pub mod models;
 pub mod provider;
 pub mod time_window;

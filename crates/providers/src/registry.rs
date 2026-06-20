@@ -11,24 +11,11 @@ use crate::copilot::CopilotProvider;
 pub fn build_registry(http: Arc<reqwest::Client>, config: &AppConfig) -> ProviderRegistry {
     let mut registry = ProviderRegistry::new();
 
-    if config
-        .provider(brim_core::models::ProviderId::Codex)
-        .enabled
-    {
-        registry.register(Box::new(CodexProvider::new(http.clone())));
-    }
-    if config
-        .provider(brim_core::models::ProviderId::Claude)
-        .enabled
-    {
-        registry.register(Box::new(ClaudeProvider::new(http.clone())));
-    }
-    if config
-        .provider(brim_core::models::ProviderId::Copilot)
-        .enabled
-    {
-        registry.register(Box::new(CopilotProvider::new(http.clone())));
-    }
+    let _ = config;
+
+    registry.register(Box::new(CodexProvider::new(http.clone())));
+    registry.register(Box::new(ClaudeProvider::new(http.clone())));
+    registry.register(Box::new(CopilotProvider::new(http.clone())));
 
     registry
 }

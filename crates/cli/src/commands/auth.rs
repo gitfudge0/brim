@@ -3,13 +3,19 @@ use brim_core::models::ProviderId;
 use brim_providers::sync_engine::SyncEngine;
 
 pub async fn status(engine: &SyncEngine) -> Result<()> {
-    for provider in engine.registry().all() {
+    for id in ProviderId::all() {
+        let enabled = engine.config().provider(*id).enabled;
+        let provider = engine
+            .registry()
+            .get(*id)
+            .expect("supported providers should always exist in registry");
         let state = provider.auth_state().await;
         let strategies = provider.strategies().join(", ");
         println!(
-            "{}: {} (strategies: {})",
+            "{}: {} (enabled: {}, strategies: {})",
             provider.display_name(),
             state,
+            if enabled { "yes" } else { "no" },
             strategies
         );
     }
@@ -17,9 +23,7 @@ pub async fn status(engine: &SyncEngine) -> Result<()> {
 }
 
 pub async fn login(engine: &SyncEngine, provider_name: &str) -> Result<()> {
-    let id: ProviderId = provider_name
-        .parse()
-        .map_err(|e: brim_core::error::CoreError| anyhow::anyhow!("{}", e))?;
+    let id = crate::commands::parse_provider_arg(provider_name)?;
     let provider = engine
         .registry()
         .get(id)
@@ -35,16 +39,30 @@ pub async fn login(engine: &SyncEngine, provider_name: &str) -> Result<()> {
 }
 
 pub async fn logout(provider_name: &str) -> Result<()> {
-    let id: ProviderId = provider_name
-        .parse()
-        .map_err(|e: brim_core::error::CoreError| anyhow::anyhow!("{}", e))?;
+    let id = crate::commands::parse_provider_arg(provider_name)?;
 
-    // Clear keyring secrets
-    match brim_storage::keyring_store::KeyringStore::delete_secret(id, "github_token") {
-        Ok(()) => {}
-        Err(e) => eprintln!("Warning: failed to clear keyring: {}", e),
+    match id {
+        ProviderId::Copilot => {
+            match brim_storage::keyring_store::KeyringStore::delete_secret(id, "github_token") {
+                Ok(()) => {
+                    println!(
+                        "Removed brim-managed GitHub token for {}",
+                        id.display_name()
+                    );
+                }
+                Err(e) => eprintln!("Warning: failed to clear keyring: {}", e),
+            }
+        }
+        ProviderId::Codex => {
+            println!(
+                "brim does not manage Codex CLI auth directly. Remove ~/.codex/auth.json manually to log out globally."
+            );
+        }
+        ProviderId::Claude => {
+            println!(
+                "brim does not manage Claude CLI credentials directly. Remove ~/.claude/.credentials.json manually to log out globally."
+            );
+        }
     }
-
-    println!("Cleared credentials for {}", id.display_name());
     Ok(())
 }
