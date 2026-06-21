@@ -4,6 +4,7 @@
 //! provider identity, quota/usage snapshots, confidence labels,
 //! time windows, and the provider trait.
 
+pub mod brand;
 pub mod confidence;
 pub mod error;
 pub mod history;

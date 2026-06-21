@@ -42,12 +42,19 @@ fn draw_header(f: &mut Frame, area: Rect, app: &App) {
 
     let title = Line::from(vec![
         Span::styled(
-            " Brim ",
+            format!(" {} ", brim_core::brand::GLYPH),
+            Style::default().fg(Color::Green),
+        ),
+        Span::styled(
+            brim_core::brand::NAME,
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("v0.1.0", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            concat!(" v", env!("CARGO_PKG_VERSION"), " "),
+            Style::default().fg(Color::DarkGray),
+        ),
         sync_indicator,
     ]);
 

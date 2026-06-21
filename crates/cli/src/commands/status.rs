@@ -4,6 +4,10 @@ use brim_core::models::{AuthState, ProviderId, ProviderStatus};
 use brim_providers::sync_engine::SyncEngine;
 
 pub async fn run(engine: &SyncEngine, provider: Option<String>, fresh: bool) -> Result<()> {
+    use std::io::IsTerminal;
+    if std::io::stdout().is_terminal() {
+        crate::commands::print_banner();
+    }
     let show_all_supported = provider.is_none();
     let statuses = collect_supported_statuses(engine, provider, fresh).await?;
 

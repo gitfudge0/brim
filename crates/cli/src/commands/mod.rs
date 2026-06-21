@@ -21,6 +21,19 @@ pub fn parse_provider_arg(name: &str) -> Result<ProviderId> {
     })
 }
 
+/// Print the ASCII brim mark + wordmark. Only call on a TTY (it's decorative).
+pub fn print_banner() {
+    use brim_core::brand::{MARK, NAME, TAGLINE};
+    // mark on the left, wordmark stacked on the right of the middle rows
+    println!("\x1b[32m{}\x1b[0m", MARK[0]);
+    println!("\x1b[32m{}\x1b[0m  \x1b[1;36m{}\x1b[0m", MARK[1], NAME);
+    println!(
+        "\x1b[32m{}\x1b[0m  \x1b[90m{}\x1b[0m",
+        MARK[2], TAGLINE
+    );
+    println!();
+}
+
 pub fn no_enabled_providers_message() -> &'static str {
     "No providers are enabled. Run 'brim config init', enable a provider in the config, then run 'brim auth login <provider>'."
 }

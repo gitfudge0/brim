@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brim-logo.svg" alt="brim — AI quota tracker" width="320">
+</p>
+
 # brim
 
 Track your AI assistant quotas across Codex, Claude, and Copilot from one fast terminal interface.
@@ -45,8 +49,9 @@ Remove the locally installed binary:
 brim uninstall
 ```
 
-This removes only the installed `brim` binary. It does not remove config,
-state, database contents, or stored credentials.
+This removes the installed `brim` binary and the background auto-sync service
+(systemd unit / launchd agent). It does not remove config, state, database
+contents, or stored credentials.
 
 If you installed via Cargo instead, use:
 
@@ -77,7 +82,7 @@ brim status
 - `brim auth status|login|logout` manages provider authentication
 - `brim config show|init|edit` manages local config
 - `brim diag` prints diagnostic information for local setup issues
-- `brim uninstall` removes the locally installed binary
+- `brim uninstall` removes the locally installed binary and the auto-sync service (keeps config, state, and credentials)
 
 ## Configuration
 
