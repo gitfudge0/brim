@@ -59,7 +59,7 @@ jobs:
           hash=$(certutil -hashfile "$zip" SHA256 | sed -n '2p' | tr -d '[:space:]')
           echo "$hash  $zip" > "$zip.sha256"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: |
             brim-${{ matrix.target }}.*
