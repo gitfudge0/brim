@@ -29,26 +29,26 @@ reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls"], defa
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8"
+toml = "1.1"
 
 # CLI
 clap = { version = "4", features = ["derive"] }
 
 # TUI
-ratatui = "0.29"
-crossterm = "0.28"
+ratatui = "0.30"
+crossterm = "0.29"
 
 # OAuth
 oauth2 = "5"
 
 # Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Secrets — backend feature is selected per-platform in crates/storage/Cargo.toml.
 keyring = { version = "3" }
 
 # Config paths
-directories = "5"
+directories = "6"
 
 # Time
 chrono = { version = "0.4", features = ["serde"] }
