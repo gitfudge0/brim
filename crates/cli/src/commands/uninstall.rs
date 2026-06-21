@@ -24,50 +24,40 @@ pub fn run() -> Result<()> {
 }
 
 fn installed_binary_path() -> Result<PathBuf> {
-    let prefix = std::env::var_os("PREFIX")
-        .map(PathBuf::from)
-        .or_else(default_prefix)
-        .context("cannot determine install prefix; set PREFIX or HOME")?;
-
-    Ok(prefix.join("bin").join("brim"))
+    resolve_binary_path(std::env::var_os("PREFIX"), std::env::var_os("HOME"))
+        .context("cannot determine install prefix; set PREFIX or HOME")
 }
 
-fn default_prefix() -> Option<PathBuf> {
-    std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local"))
+// ponytail: pure so tests don't race on process-global env vars
+fn resolve_binary_path(
+    prefix: Option<std::ffi::OsString>,
+    home: Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    let prefix = prefix
+        .map(PathBuf::from)
+        .or_else(|| home.map(|h| PathBuf::from(h).join(".local")))?;
+    Some(prefix.join("bin").join("brim"))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::installed_binary_path;
+    use super::resolve_binary_path;
     use std::path::PathBuf;
 
     #[test]
     fn uses_prefix_when_provided() {
-        unsafe {
-            std::env::set_var("PREFIX", "/tmp/brim-prefix");
-            std::env::remove_var("HOME");
-        }
-
-        let path = installed_binary_path().unwrap();
+        let path = resolve_binary_path(Some("/tmp/brim-prefix".into()), None).unwrap();
         assert_eq!(path, PathBuf::from("/tmp/brim-prefix/bin/brim"));
-
-        unsafe {
-            std::env::remove_var("PREFIX");
-        }
     }
 
     #[test]
     fn falls_back_to_home_local_bin() {
-        unsafe {
-            std::env::remove_var("PREFIX");
-            std::env::set_var("HOME", "/tmp/brim-home");
-        }
-
-        let path = installed_binary_path().unwrap();
+        let path = resolve_binary_path(None, Some("/tmp/brim-home".into())).unwrap();
         assert_eq!(path, PathBuf::from("/tmp/brim-home/.local/bin/brim"));
+    }
 
-        unsafe {
-            std::env::remove_var("HOME");
-        }
+    #[test]
+    fn none_when_neither_set() {
+        assert!(resolve_binary_path(None, None).is_none());
     }
 }
