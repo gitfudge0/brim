@@ -3,6 +3,7 @@ pub mod config;
 pub mod diag;
 pub mod history;
 pub mod json;
+pub mod provider;
 pub mod status;
 pub mod sync;
 pub mod uninstall;

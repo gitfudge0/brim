@@ -16,7 +16,7 @@ pub async fn run(engine: &SyncEngine, provider: Option<String>, fresh: bool) -> 
         // Compute burn rate from the last 1 day of history (best-effort).
         let burn_info = engine
             .db()
-            .snapshots_for_history(status.provider, 1)
+            .snapshots_for_history(status.provider, 7)
             .ok()
             .map(|snaps| {
                 let m = compute_history_metrics(&snaps);
@@ -37,55 +37,46 @@ pub async fn run(engine: &SyncEngine, provider: Option<String>, fresh: bool) -> 
     Ok(())
 }
 
+/// Collect statuses for enabled providers (or a specific one). Used by `json` and others.
 pub async fn collect_statuses(
     engine: &SyncEngine,
     provider: Option<String>,
     fresh: bool,
 ) -> Result<Vec<ProviderStatus>> {
-    let ids = match provider {
-        Some(name) => vec![crate::commands::parse_provider_arg(&name)?],
-        None => engine.config().enabled_provider_ids(),
-    };
-    let mut statuses = Vec::with_capacity(ids.len());
-
-    for id in ids {
-        if fresh {
-            statuses.push(engine.fresh_status(id).await);
-            continue;
-        }
-
-        let snapshot = engine.cached_snapshot(id);
-        let auth = match engine.registry().get(id) {
-            Some(p) => p.auth_state().await,
-            None => AuthState::NotConfigured,
-        };
-
-        statuses.push(ProviderStatus {
-            provider: id,
-            auth_state: auth,
-            last_snapshot: snapshot,
-            enabled: engine.registry().get(id).is_some(),
-        });
-    }
-
-    Ok(statuses)
+    collect(engine, provider, fresh, false).await
 }
 
+/// Collect statuses for all supported providers (or a specific one). Used by `status`.
 pub async fn collect_supported_statuses(
     engine: &SyncEngine,
     provider: Option<String>,
     fresh: bool,
 ) -> Result<Vec<ProviderStatus>> {
-    let explicit_provider = provider.is_some();
+    collect(engine, provider, fresh, true).await
+}
+
+async fn collect(
+    engine: &SyncEngine,
+    provider: Option<String>,
+    fresh: bool,
+    all_supported: bool,
+) -> Result<Vec<ProviderStatus>> {
+    let explicit = provider.is_some();
     let ids = match provider {
         Some(name) => vec![crate::commands::parse_provider_arg(&name)?],
-        None => ProviderId::all().to_vec(),
+        None => {
+            if all_supported {
+                ProviderId::all().to_vec()
+            } else {
+                engine.config().enabled_provider_ids()
+            }
+        }
     };
     let mut statuses = Vec::with_capacity(ids.len());
 
     for id in ids {
-        let should_fetch_fresh =
-            fresh && (explicit_provider || engine.config().provider(id).enabled);
+        let enabled = engine.config().provider(id).enabled;
+        let should_fetch_fresh = fresh && (explicit || enabled);
         if should_fetch_fresh {
             statuses.push(engine.fresh_status(id).await);
             continue;
@@ -101,7 +92,7 @@ pub async fn collect_supported_statuses(
             provider: id,
             auth_state: auth,
             last_snapshot: snapshot,
-            enabled: engine.config().provider(id).enabled,
+            enabled,
         });
     }
 

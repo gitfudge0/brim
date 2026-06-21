@@ -140,7 +140,7 @@ dependencies = [
 
 [[package]]
 name = "brim-auth"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "brim-cli"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "brim-auth",
@@ -179,7 +179,7 @@ dependencies = [
 
 [[package]]
 name = "brim-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "async-trait",
  "chrono",
@@ -192,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "brim-providers"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -211,7 +211,7 @@ dependencies = [
 
 [[package]]
 name = "brim-storage"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "brim-core",
@@ -228,7 +228,7 @@ dependencies = [
 
 [[package]]
 name = "brim-tui"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "brim-core",

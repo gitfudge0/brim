@@ -39,10 +39,12 @@ pub async fn run(engine: &SyncEngine, provider: Option<String>) -> Result<()> {
     }
 
     let pruned = engine.prune_old_data(engine.config().general.prune_after_days as i64);
-    println!(
-        "Summary: {} provider(s) synced successfully, {} failed.",
-        success_count, failure_count
-    );
+    if ids.len() > 1 {
+        println!(
+            "Summary: {} provider(s) synced successfully, {} failed.",
+            success_count, failure_count
+        );
+    }
     if pruned > 0 {
         println!("Pruned {} old snapshot(s).", pruned);
     }

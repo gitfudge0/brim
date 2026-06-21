@@ -79,10 +79,31 @@ enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+    /// List, enable, or disable providers
+    Provider {
+        #[command(subcommand)]
+        action: ProviderAction,
+    },
     /// Show diagnostic information
     Diag,
     /// Remove the locally installed brim binary (keeps config, state, and credentials)
     Uninstall,
+}
+
+#[derive(Subcommand)]
+enum ProviderAction {
+    /// List all providers and their enabled status
+    List,
+    /// Enable a provider
+    Enable {
+        /// Provider name (codex, claude, copilot)
+        provider: String,
+    },
+    /// Disable a provider
+    Disable {
+        /// Provider name (codex, claude, copilot)
+        provider: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -202,6 +223,22 @@ async fn main() -> Result<()> {
                 AuthAction::Status => commands::auth::status(&engine).await?,
                 AuthAction::Login { provider } => commands::auth::login(&engine, &provider).await?,
                 AuthAction::Logout { provider } => commands::auth::logout(&provider).await?,
+            }
+        }
+        Commands::Provider { action } => {
+            match action {
+                ProviderAction::List => {
+                    let state = AppState::init()?;
+                    commands::provider::list(&state.config);
+                }
+                ProviderAction::Enable { provider } => {
+                    let id = commands::parse_provider_arg(&provider)?;
+                    commands::provider::set_enabled(id, true)?;
+                }
+                ProviderAction::Disable { provider } => {
+                    let id = commands::parse_provider_arg(&provider)?;
+                    commands::provider::set_enabled(id, false)?;
+                }
             }
         }
         Commands::Config { action } => match action {

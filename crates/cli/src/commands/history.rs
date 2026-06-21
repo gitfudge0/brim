@@ -14,7 +14,7 @@ pub async fn run(
 ) -> Result<()> {
     let ids: Vec<ProviderId> = match provider {
         Some(ref name) => vec![crate::commands::parse_provider_arg(name)?],
-        None => ProviderId::all().to_vec(),
+        None => engine.config().enabled_provider_ids(),
     };
 
     for id in ids {
