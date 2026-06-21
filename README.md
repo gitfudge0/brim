@@ -64,9 +64,9 @@ brim status
 ## Commands
 
 - `brim status [provider] [--fresh]` shows usage status for all providers or one provider
-- `brim json [provider] [--fresh]` emits compact machine-readable usage JSON
-- `brim json [provider] [--fresh] --full` emits the richer provider summary JSON
+- `brim json [provider] [--fresh] [--full]` emits machine-readable usage JSON (`--full` for the richer summary)
 - `brim sync [provider]` fetches fresh usage data and stores it locally
+- `brim provider list|enable|disable <provider>` lists or toggles which providers are active
 - `brim auth status|login|logout` manages provider authentication
 - `brim config show|init|edit` manages local config
 - `brim diag` prints diagnostic information for local setup issues
@@ -77,7 +77,7 @@ brim status
 - Linux config path: `~/.config/brim/config.toml`
 - Linux state path: `~/.local/share/state/brim/app.db`
 - Paths are platform-dependent outside Linux
-- Providers are disabled by default until you enable and configure them
+- Providers are disabled by default; enable them with `brim provider enable <provider>` or by editing the config
 
 Example config:
 
@@ -103,83 +103,29 @@ poll_interval_secs = 300
 
 ## Build Your Own With `brim`
 
-The main integration surface is `brim json`. By default it returns a compact object with `version` and a `usage` map keyed by provider. Each provider contains canonical window keys like `session`, `weekly`, `monthly`, or `daily`, and each window exposes `remaining_pct` plus `resets_at`.
+The main integration surface is `brim json`. By default it returns a compact object with `version` and a `usage` map keyed by provider. Each provider has canonical window keys (`session`, `weekly`, `monthly`, `daily`), each exposing `remaining_pct` and `resets_at`. Add `--full` for the richer summary array (auth state, plan, notes, source, full bucket details).
 
-Use `brim json --full` if you want the richer provider summary array with auth state, plan metadata, notes, source information, and full bucket details.
-
-Basic checks:
-
-```bash
-brim status
-brim status claude --fresh
-brim json
-brim json codex --fresh
-brim json --full
-brim sync
-brim config init
-brim config show
-brim diag
-```
-
-Extract a remaining percentage with `jq`:
+Read a single window:
 
 ```bash
 brim json codex | jq '.usage.codex.session.remaining_pct'
 ```
 
-Show provider auth state:
+Alert when any provider drops below 15%:
 
 ```bash
-brim json | jq '.usage | keys'
+if brim json --fresh | jq -e '.usage[][] | select((.remaining_pct // 1) < 0.15)' >/dev/null; then
+  notify-send "brim" "Quota below 15%"
+fi
 ```
 
-Print the latest notes:
-
-```bash
-brim json --full | jq '.[] | { provider, notes }'
-```
-
-Status bar or menu bar integration:
-
-```bash
-brim json --fresh | jq -r '
-  .usage.claude.weekly.remaining_pct as $v
-  | "Claude \((($v // 0) * 100) | floor)%"
-'
-```
-
-Run periodic sync with cron:
+Sync periodically with cron:
 
 ```cron
 */10 * * * * brim sync >/dev/null 2>&1
 ```
 
-Use in a shell script for alerts:
-
-```bash
-if brim json --fresh | jq -e '
-  .usage
-  | to_entries[]
-  | .value
-  | to_entries[]
-  | select((.value.remaining_pct // 1) < 0.15)
-' >/dev/null; then
-  notify-send "brim" "Quota below 15%"
-fi
-```
-
-Use from custom apps:
-
-- Poll `brim json --fresh` from a menu bar app, dashboard, or desktop widget
-- Read a single provider window directly from `.usage.<provider>.<window>`
-- Trigger alerts when any provider drops below a threshold
-- Feed `brim json` or `brim json --full` into tmux, i3blocks, SketchyBar, Polybar, or a local web app
-
-Notes on command scope:
-
-- `brim status` and `brim auth status` without a provider show all supported providers
-- `brim sync` without a provider targets enabled providers only
-- `brim json` without a provider returns usage for the providers currently included in machine-readable output
+Feed `brim json` into tmux, i3blocks, SketchyBar, Polybar, a menu bar app, or any local dashboard. Note that `status`/`auth status` show all supported providers, while `sync` without a provider targets enabled ones only.
 
 ## Community
 
