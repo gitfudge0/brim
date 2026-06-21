@@ -120,10 +120,7 @@ fn compute_burn_rate(snapshots: &[UsageSnapshot]) -> Option<BurnRate> {
     })
 }
 
-fn compute_time_to_empty(
-    snapshots: &[UsageSnapshot],
-    burn_rate: Option<&BurnRate>,
-) -> Option<f64> {
+fn compute_time_to_empty(snapshots: &[UsageSnapshot], burn_rate: Option<&BurnRate>) -> Option<f64> {
     let burn = burn_rate?;
     if burn.req_per_hour <= 0.0 {
         return None;

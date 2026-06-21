@@ -18,8 +18,7 @@ pub fn set_enabled(id: ProviderId, enabled: bool) -> Result<()> {
     let paths = AppPaths::resolve().map_err(|e| anyhow::anyhow!("{}", e))?;
     paths.ensure_dirs().map_err(|e| anyhow::anyhow!("{}", e))?;
 
-    let mut config =
-        AppConfig::load(&paths.config_file).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let mut config = AppConfig::load(&paths.config_file).map_err(|e| anyhow::anyhow!("{}", e))?;
     config.set_provider_enabled(id, enabled);
     config
         .save(&paths.config_file)
@@ -31,7 +30,10 @@ pub fn set_enabled(id: ProviderId, enabled: bool) -> Result<()> {
         if enabled { "enabled" } else { "disabled" }
     );
     if enabled {
-        println!("Run `brim auth login {}` if you haven't authenticated yet.", id.as_str());
+        println!(
+            "Run `brim auth login {}` if you haven't authenticated yet.",
+            id.as_str()
+        );
     }
     Ok(())
 }

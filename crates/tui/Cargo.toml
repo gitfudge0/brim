@@ -3,6 +3,10 @@ name = "brim-tui"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "brim_tui"
+path = "src/lib.rs"
+
 [[bin]]
 name = "brim-tui"
 path = "src/main.rs"

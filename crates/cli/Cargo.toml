@@ -12,6 +12,7 @@ brim-core = { workspace = true }
 brim-providers = { workspace = true }
 brim-auth = { workspace = true }
 brim-storage = { workspace = true }
+brim-tui = { workspace = true }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

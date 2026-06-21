@@ -80,7 +80,8 @@ pub async fn run(
     full: bool,
     history: bool,
 ) -> Result<()> {
-    let statuses = crate::commands::status::collect_statuses(engine, provider.clone(), fresh).await?;
+    let statuses =
+        crate::commands::status::collect_statuses(engine, provider.clone(), fresh).await?;
 
     // Build per-provider history metrics if requested.
     let history_map: BTreeMap<String, HistoryMetrics> = if history {

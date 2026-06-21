@@ -166,13 +166,10 @@ impl Database {
              ORDER BY fetched_at ASC",
         )?;
 
-        let rows = stmt.query_map(
-            params![provider.as_str(), from.to_rfc3339()],
-            |row| {
-                let json: String = row.get(0)?;
-                Ok(json)
-            },
-        )?;
+        let rows = stmt.query_map(params![provider.as_str(), from.to_rfc3339()], |row| {
+            let json: String = row.get(0)?;
+            Ok(json)
+        })?;
 
         let mut snapshots = Vec::new();
         for row in rows {

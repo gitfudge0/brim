@@ -1,3 +1,4 @@
+use std::io::IsTerminal;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -23,8 +24,9 @@ struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, global = true)]
     verbose: u8,
 
+    /// Subcommand to run. Omit to launch the interactive dashboard.
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -186,7 +188,33 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    match cli.command {
+    let command = match cli.command {
+        Some(cmd) => cmd,
+        // Bare `brim`: launch the guided interactive dashboard.
+        None => {
+            let state = AppState::init()?;
+            if std::io::stdout().is_terminal() {
+                // The TUI builds its own tokio runtime, which would panic inside
+                // this #[tokio::main] context — run it on a dedicated thread.
+                let AppState {
+                    paths,
+                    config,
+                    db,
+                    http,
+                } = state;
+                std::thread::spawn(move || brim_tui::run(paths, config, db, http))
+                    .join()
+                    .map_err(|_| anyhow::anyhow!("tui thread panicked"))??;
+            } else {
+                // ponytail: no TTY (piped/redirected) -> print status instead of a TUI.
+                let engine = state.build_sync_engine();
+                commands::status::run(&engine, None, false).await?;
+            }
+            return Ok(());
+        }
+    };
+
+    match command {
         Commands::Status { provider, fresh } => {
             let state = AppState::init()?;
             let engine = state.build_sync_engine();
@@ -225,22 +253,20 @@ async fn main() -> Result<()> {
                 AuthAction::Logout { provider } => commands::auth::logout(&provider).await?,
             }
         }
-        Commands::Provider { action } => {
-            match action {
-                ProviderAction::List => {
-                    let state = AppState::init()?;
-                    commands::provider::list(&state.config);
-                }
-                ProviderAction::Enable { provider } => {
-                    let id = commands::parse_provider_arg(&provider)?;
-                    commands::provider::set_enabled(id, true)?;
-                }
-                ProviderAction::Disable { provider } => {
-                    let id = commands::parse_provider_arg(&provider)?;
-                    commands::provider::set_enabled(id, false)?;
-                }
+        Commands::Provider { action } => match action {
+            ProviderAction::List => {
+                let state = AppState::init()?;
+                commands::provider::list(&state.config);
             }
-        }
+            ProviderAction::Enable { provider } => {
+                let id = commands::parse_provider_arg(&provider)?;
+                commands::provider::set_enabled(id, true)?;
+            }
+            ProviderAction::Disable { provider } => {
+                let id = commands::parse_provider_arg(&provider)?;
+                commands::provider::set_enabled(id, false)?;
+            }
+        },
         Commands::Config { action } => match action {
             ConfigAction::Show => commands::config::show()?,
             ConfigAction::Init => commands::config::init()?,

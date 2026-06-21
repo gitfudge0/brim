@@ -10,6 +10,10 @@ Track your AI assistant quotas across Codex, Claude, and Copilot from one fast t
 - Local config and state
 - Auth helpers and diagnostics
 
+## Interactive Dashboard
+
+Run `brim` with no subcommand to open an interactive guided dashboard (TUI). It shows live usage status for enabled providers, lets you add or remove providers, and runs auth flows inline. If stdout is not a terminal (piped or redirected), bare `brim` prints the same output as `brim status`.
+
 ## Build
 
 ```bash
@@ -63,6 +67,7 @@ brim status
 
 ## Commands
 
+- `brim` (no subcommand) opens the interactive dashboard, or prints `brim status` output when stdout is not a terminal
 - `brim status [provider] [--fresh]` shows usage status for all providers or one provider
 - `brim json [provider] [--fresh] [--full]` emits machine-readable usage JSON (`--full` for the richer summary)
 - `brim sync [provider]` fetches fresh usage data and stores it locally

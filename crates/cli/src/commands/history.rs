@@ -128,12 +128,7 @@ fn print_history(
 }
 
 fn weekly_latest_pct(metrics: &HistoryMetrics) -> f64 {
-    metrics
-        .weekly_peaks
-        .last()
-        .copied()
-        .unwrap_or(0.0)
-        * 100.0
+    metrics.weekly_peaks.last().copied().unwrap_or(0.0) * 100.0
 }
 
 /// Build a sparkline string from fractions 0.0–1.0 using 8-level Unicode blocks.
@@ -172,5 +167,8 @@ pub fn burn_rate_line(br: &BurnRate, time_to_empty_mins: Option<f64>) -> String 
         Some(mins) => format!("  ·  ~{} at this pace", format_mins(mins)),
         None => String::new(),
     };
-    format!("burn: {:.1} req/hr{}{}", br.req_per_hour, pace_str, stale_label)
+    format!(
+        "burn: {:.1} req/hr{}{}",
+        br.req_per_hour, pace_str, stale_label
+    )
 }
