@@ -3,6 +3,12 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 
 pub fn run() -> Result<()> {
+    // Remove the background service first so we don't leave an orphaned unit
+    // pointing at a deleted binary.
+    if let Err(e) = crate::service::uninstall() {
+        eprintln!("warning: could not remove auto-sync service: {e}");
+    }
+
     let path = installed_binary_path()?;
 
     if path.exists() {

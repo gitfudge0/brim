@@ -10,6 +10,7 @@ use brim_storage::db::Database;
 use brim_storage::paths::AppPaths;
 
 mod commands;
+mod service;
 
 const STATUS_AFTER_HELP: &str = "Examples:\n  brim status\n  brim status claude --fresh";
 const JSON_AFTER_HELP: &str = "Examples:\n  brim json\n  brim json codex --full";
@@ -86,6 +87,11 @@ enum Commands {
         #[command(subcommand)]
         action: ProviderAction,
     },
+    /// Keep usage data fresh in the background on a schedule
+    Autosync {
+        #[command(subcommand)]
+        action: AutosyncAction,
+    },
     /// Show diagnostic information
     Diag,
     /// Remove the locally installed brim binary (keeps config, state, and credentials)
@@ -106,6 +112,27 @@ enum ProviderAction {
         /// Provider name (codex, claude, copilot)
         provider: String,
     },
+}
+
+#[derive(Subcommand)]
+enum AutosyncAction {
+    /// Enable background auto-sync (installs an OS service)
+    Enable,
+    /// Disable background auto-sync (removes the OS service)
+    Disable,
+    /// Show whether auto-sync is running and when each provider last synced
+    Status,
+    /// Show or set the sync interval in seconds
+    Interval {
+        /// New interval in seconds. Omit to show the current values.
+        secs: Option<u64>,
+        /// Set a per-provider override instead of the default (codex, claude, copilot)
+        #[arg(long)]
+        provider: Option<String>,
+    },
+    /// Run the sync loop in the foreground (used by the OS service)
+    #[command(hide = true)]
+    Run,
 }
 
 #[derive(Subcommand)]
@@ -265,6 +292,28 @@ async fn main() -> Result<()> {
             ProviderAction::Disable { provider } => {
                 let id = commands::parse_provider_arg(&provider)?;
                 commands::provider::set_enabled(id, false)?;
+            }
+        },
+        Commands::Autosync { action } => match action {
+            AutosyncAction::Enable => commands::autosync::enable()?,
+            AutosyncAction::Disable => commands::autosync::disable()?,
+            AutosyncAction::Status => {
+                let state = AppState::init()?;
+                let engine = state.build_sync_engine();
+                commands::autosync::status(&engine)?;
+            }
+            AutosyncAction::Interval { secs, provider } => {
+                let provider = provider
+                    .as_deref()
+                    .map(commands::parse_provider_arg)
+                    .transpose()?;
+                commands::autosync::interval(provider, secs)?;
+            }
+            AutosyncAction::Run => {
+                let state = AppState::init()?;
+                let config_path = state.paths.config_file.clone();
+                let engine = state.build_sync_engine();
+                commands::autosync::run(&engine, &config_path).await?;
             }
         },
         Commands::Config { action } => match action {

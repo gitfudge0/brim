@@ -72,6 +72,8 @@ brim status
 - `brim json [provider] [--fresh] [--full]` emits machine-readable usage JSON (`--full` for the richer summary)
 - `brim sync [provider]` fetches fresh usage data and stores it locally
 - `brim provider list|enable|disable <provider>` lists or toggles which providers are active
+- `brim autosync enable|disable|status` runs background syncing on a schedule via an OS service (systemd/launchd)
+- `brim autosync interval [secs] [--provider <provider>]` shows or sets the sync cadence (changes apply to a running auto-sync within seconds, no restart)
 - `brim auth status|login|logout` manages provider authentication
 - `brim config show|init|edit` manages local config
 - `brim diag` prints diagnostic information for local setup issues
@@ -83,6 +85,7 @@ brim status
 - Linux state path: `~/.local/share/state/brim/app.db`
 - Paths are platform-dependent outside Linux
 - Providers are disabled by default; enable them with `brim provider enable <provider>` or by editing the config
+- `install.sh` enables background auto-sync automatically; opt out with `BRIM_NO_SERVICE=1 ./install.sh`, or turn it off later with `brim autosync disable`
 
 Example config:
 

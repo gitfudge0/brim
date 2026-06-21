@@ -30,6 +30,14 @@ chmod 755 "$DEST"
 echo "Built release binary successfully"
 echo "Installed $("$DEST" --version)"
 
+# Enable background auto-sync so usage data stays fresh. Opt out with
+# BRIM_NO_SERVICE=1 ./install.sh
+if [[ "${BRIM_NO_SERVICE:-0}" != "1" ]]; then
+  "$DEST" autosync enable || echo "(auto-sync setup skipped)"
+else
+  echo "Skipping auto-sync setup (BRIM_NO_SERVICE=1)"
+fi
+
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
   *)

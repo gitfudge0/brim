@@ -110,6 +110,20 @@ impl AppConfig {
             .enabled = enabled;
     }
 
+    /// Set the poll interval. `id = None` sets the general default; otherwise
+    /// sets a per-provider override.
+    pub fn set_poll_interval(&mut self, id: Option<ProviderId>, secs: u64) {
+        match id {
+            None => self.general.poll_interval_secs = secs,
+            Some(id) => {
+                self.providers
+                    .entry(id.as_str().to_string())
+                    .or_default()
+                    .poll_interval_secs = secs
+            }
+        }
+    }
+
     pub fn enabled_provider_ids(&self) -> Vec<ProviderId> {
         ProviderId::all()
             .iter()
@@ -133,4 +147,23 @@ impl AppConfig {
     }
 }
 
-// Remove stale comment about HashMap::new constness
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn set_poll_interval_general_and_override() {
+        let mut config = AppConfig::default();
+
+        config.set_poll_interval(None, 600);
+        assert_eq!(config.general.poll_interval_secs, 600);
+
+        // A per-provider override wins over the general default.
+        config.set_poll_interval(Some(ProviderId::Claude), 900);
+        assert_eq!(config.poll_interval(ProviderId::Claude), 900);
+
+        // A provider explicitly set to 0 falls back to the general default.
+        config.set_poll_interval(Some(ProviderId::Codex), 0);
+        assert_eq!(config.poll_interval(ProviderId::Codex), 600);
+    }
+}

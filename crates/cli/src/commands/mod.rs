@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod autosync;
 pub mod config;
 pub mod diag;
 pub mod history;
