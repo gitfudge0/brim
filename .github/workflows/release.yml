@@ -63,4 +63,6 @@ jobs:
         with:
           files: |
             brim-${{ matrix.target }}.*
-          generate_release_notes: true
+          # Attach to the existing draft and keep it a draft, so binaries are
+          # staged for review and you publish manually when ready.
+          draft: true
