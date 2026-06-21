@@ -30,20 +30,6 @@ impl ClaudeProvider {
         Self { http }
     }
 
-    fn oauth_subscription_plan(plan: Option<String>, tier: Option<String>) -> Option<PlanInfo> {
-        match (plan, tier) {
-            (Some(plan_name), tier) => Some(PlanInfo {
-                name: Labeled::experimental(plan_name),
-                tier: tier.map(Labeled::experimental),
-            }),
-            (None, Some(tier_name)) => Some(PlanInfo {
-                name: Labeled::experimental("Claude".to_string()),
-                tier: Some(Labeled::experimental(tier_name)),
-            }),
-            (None, None) => None,
-        }
-    }
-
     fn local_subscription_plan(subscription_type: &str) -> PlanInfo {
         PlanInfo {
             name: Labeled::provider_local("Claude".to_string()),
@@ -147,74 +133,39 @@ impl ClaudeProvider {
 
         let mut buckets = Vec::new();
 
-        // Session (5-hour) window
-        if let Some(ref session) = usage.five_hour {
-            let mut window = TimeWindow::session("5-hour session", 5 * 3600);
-            if let Some(ref reset) = session.resets_at {
-                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(reset) {
-                    window = window.with_reset(dt.with_timezone(&Utc));
-                }
-            }
-
-            let pct = session
-                .percent_remaining
-                .map(|p| Labeled::experimental(p / 100.0));
-
-            buckets.push(QuotaBucket {
-                metric: "five_hour".into(),
-                label: "Session (5h)".into(),
-                window,
-                used: session.used.map(Labeled::experimental),
-                limit: session.limit.map(Labeled::experimental),
-                percent_remaining: pct,
-            });
+        if let Some(ref w) = usage.five_hour {
+            buckets.push(w.to_bucket(
+                "five_hour",
+                "Session (5h)",
+                TimeWindow::session("5-hour session", 5 * 3600),
+            ));
         }
-
-        // Weekly (7-day) window
-        if let Some(ref weekly) = usage.seven_day {
-            let mut window = TimeWindow::weekly("7-day rolling");
-            if let Some(ref reset) = weekly.resets_at {
-                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(reset) {
-                    window = window.with_reset(dt.with_timezone(&Utc));
-                }
-            }
-
-            let pct = weekly
-                .percent_remaining
-                .map(|p| Labeled::experimental(p / 100.0));
-
-            buckets.push(QuotaBucket {
-                metric: "seven_day".into(),
-                label: "Weekly (7d)".into(),
-                window,
-                used: weekly.used.map(Labeled::experimental),
-                limit: weekly.limit.map(Labeled::experimental),
-                percent_remaining: pct,
-            });
+        if let Some(ref w) = usage.seven_day {
+            buckets.push(w.to_bucket(
+                "seven_day",
+                "Weekly (7d)",
+                TimeWindow::weekly("7-day rolling"),
+            ));
         }
-
-        // Per-model windows if present
-        for model_usage in &usage.models.clone().unwrap_or_default() {
-            if let Some(ref session) = model_usage.five_hour {
-                let window =
-                    TimeWindow::session(format!("{} session", model_usage.model), 5 * 3600);
-                buckets.push(QuotaBucket {
-                    metric: format!("{}_five_hour", model_usage.model),
-                    label: format!("{} Session", model_usage.model),
-                    window,
-                    used: session.used.map(Labeled::experimental),
-                    limit: session.limit.map(Labeled::experimental),
-                    percent_remaining: session
-                        .percent_remaining
-                        .map(|p| Labeled::experimental(p / 100.0)),
-                });
-            }
+        if let Some(ref w) = usage.seven_day_opus {
+            buckets.push(w.to_bucket(
+                "seven_day_opus",
+                "Weekly Opus (7d)",
+                TimeWindow::weekly("7-day Opus"),
+            ));
+        }
+        if let Some(ref w) = usage.seven_day_sonnet {
+            buckets.push(w.to_bucket(
+                "seven_day_sonnet",
+                "Weekly Sonnet (7d)",
+                TimeWindow::weekly("7-day Sonnet"),
+            ));
         }
 
         Ok(UsageSnapshot {
             provider: ProviderId::Claude,
             fetched_at: Utc::now(),
-            plan: Self::oauth_subscription_plan(usage.plan, usage.tier),
+            plan: None,
             buckets,
             source_strategy: "oauth_usage".into(),
             notes: vec!["Data from Anthropic OAuth usage API (experimental)".into()],
@@ -489,23 +440,38 @@ impl ClaudeCredentialsFile {
 struct ClaudeUsageResponse {
     five_hour: Option<ClaudeWindow>,
     seven_day: Option<ClaudeWindow>,
-    plan: Option<String>,
-    tier: Option<String>,
-    models: Option<Vec<ClaudeModelUsage>>,
+    seven_day_opus: Option<ClaudeWindow>,
+    seven_day_sonnet: Option<ClaudeWindow>,
 }
 
+/// A usage window. The API reports `utilization` as percent *used* (0-100) and
+/// optional dollar amounts; it does not report token counts or limits directly.
 #[derive(Debug, Clone, Deserialize)]
 struct ClaudeWindow {
-    used: Option<f64>,
-    limit: Option<f64>,
-    percent_remaining: Option<f64>,
+    utilization: Option<f64>,
+    used_dollars: Option<f64>,
+    limit_dollars: Option<f64>,
     resets_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct ClaudeModelUsage {
-    model: String,
-    five_hour: Option<ClaudeWindow>,
+impl ClaudeWindow {
+    fn to_bucket(&self, metric: &str, label: &str, mut window: TimeWindow) -> QuotaBucket {
+        if let Some(ref reset) = self.resets_at {
+            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(reset) {
+                window = window.with_reset(dt.with_timezone(&Utc));
+            }
+        }
+        QuotaBucket {
+            metric: metric.into(),
+            label: label.into(),
+            window,
+            used: self.used_dollars.map(Labeled::experimental),
+            limit: self.limit_dollars.map(Labeled::experimental),
+            percent_remaining: self
+                .utilization
+                .map(|u| Labeled::experimental((100.0 - u) / 100.0)),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -518,73 +484,50 @@ mod tests {
     }
 
     #[test]
-    fn parses_oauth_plan_and_tier() {
+    fn parses_utilization_windows() {
         let snapshot = provider()
             .parse_oauth_usage(
                 r#"{
-                    "plan": "Claude",
-                    "tier": "Pro",
                     "five_hour": {
-                        "used": 10,
-                        "limit": 50,
-                        "percent_remaining": 80
-                    }
+                        "utilization": 3.0,
+                        "resets_at": "2026-06-21T14:39:59.138466+00:00",
+                        "used_dollars": null,
+                        "limit_dollars": null
+                    },
+                    "seven_day": { "utilization": 6.0 },
+                    "seven_day_sonnet": { "utilization": 2.0 }
                 }"#,
             )
             .expect("oauth usage should parse");
 
-        let plan = snapshot.plan.expect("plan should be present");
-        assert_eq!(plan.name.value, "Claude");
-        assert_eq!(plan.name.confidence, Confidence::Experimental);
-        assert_eq!(plan.tier.as_ref().map(|t| t.value.as_str()), Some("Pro"));
-        assert_eq!(
-            plan.tier.as_ref().map(|t| t.confidence),
-            Some(Confidence::Experimental)
-        );
+        // plan is not in the usage API; left to local-credential enrichment
+        assert!(snapshot.plan.is_none());
+
+        let session = snapshot
+            .buckets
+            .iter()
+            .find(|b| b.metric == "five_hour")
+            .expect("session bucket present");
+        // utilization 3% used -> 97% remaining (stored as fraction)
+        let pct = session.percent_remaining.as_ref().expect("pct present");
+        assert!((pct.value - 0.97).abs() < 1e-9);
+        assert!(session.window.resets_at.is_some());
+
+        assert!(snapshot.buckets.iter().any(|b| b.metric == "seven_day"));
+        assert!(snapshot
+            .buckets
+            .iter()
+            .any(|b| b.metric == "seven_day_sonnet"));
     }
 
     #[test]
-    fn parses_oauth_plan_only() {
-        let snapshot = provider()
-            .parse_oauth_usage(
-                r#"{
-                    "plan": "Claude"
-                }"#,
-            )
-            .expect("oauth usage should parse");
-
-        let plan = snapshot.plan.expect("plan should be present");
-        assert_eq!(plan.name.value, "Claude");
-        assert!(plan.tier.is_none());
-    }
-
-    #[test]
-    fn parses_oauth_tier_only_using_stable_name() {
-        let snapshot = provider()
-            .parse_oauth_usage(
-                r#"{
-                    "tier": "Pro"
-                }"#,
-            )
-            .expect("oauth usage should parse");
-
-        let plan = snapshot.plan.expect("plan should be present");
-        assert_eq!(plan.name.value, "Claude");
-        assert_eq!(plan.name.confidence, Confidence::Experimental);
-        assert_eq!(plan.tier.as_ref().map(|t| t.value.as_str()), Some("Pro"));
-        assert_eq!(
-            plan.tier.as_ref().map(|t| t.confidence),
-            Some(Confidence::Experimental)
-        );
-    }
-
-    #[test]
-    fn parses_oauth_without_plan_or_tier_as_none() {
+    fn parses_empty_as_no_buckets() {
         let snapshot = provider()
             .parse_oauth_usage("{}")
             .expect("oauth usage should parse");
 
         assert!(snapshot.plan.is_none());
+        assert!(snapshot.buckets.is_empty());
     }
 
     #[test]
