@@ -2,13 +2,20 @@
 
 `brim` should stay small, practical, and terminal-first. Prefer scoped changes that improve the tool without adding unnecessary surface area.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the crate layout and a guide to
+adding a new provider.
+
 ## Setup
 
 ```bash
-cargo fmt
+cargo fmt --all
 cargo build
+cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
+
+CI runs fmt, clippy (`-D warnings`), and tests on Linux, macOS, and Windows, so
+run them locally before pushing.
 
 ## Issues
 

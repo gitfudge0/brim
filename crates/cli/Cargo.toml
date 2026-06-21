@@ -2,10 +2,20 @@
 name = "brim-cli"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Track AI assistant quota usage (Claude, Codex, Copilot) from one CLI/TUI."
 
 [[bin]]
 name = "brim"
 path = "src/main.rs"
+
+# Lets users run `cargo binstall brim-cli` to grab a prebuilt binary instead of
+# compiling. Matches the asset names produced by .github/workflows/release.yml.
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/brim-{ target }.{ archive-format }"
+bin-dir = "brim{ binary-ext }"
 
 [dependencies]
 brim-core = { workspace = true }

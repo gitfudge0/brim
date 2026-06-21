@@ -5,11 +5,7 @@
 
 /// Three-line mark: a small tank filling up. Pair with [`WORDMARK`] beside it.
 /// The fill characters (`░▒▓█`) are the accent-colored part.
-pub const MARK: [&str; 3] = [
-    "╭──╮",
-    "│▒▓│",
-    "│▓█│",
-];
+pub const MARK: [&str; 3] = ["╭──╮", "│▒▓│", "│▓█│"];
 
 /// One-line brand glyph used inline (headers, prompts).
 pub const GLYPH: &str = "▸";

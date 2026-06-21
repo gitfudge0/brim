@@ -1,0 +1,66 @@
+name: Release
+
+# Tag a release to build and publish cross-platform binaries:
+#   git tag v0.3.0 && git push origin v0.3.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }} -p brim-cli
+
+      # Package as brim-<target>.tar.gz (unix) / .zip (windows) — the naming
+      # cargo-binstall expects, so `cargo binstall brim-cli` just works.
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bin=target/${{ matrix.target }}/release/brim
+          tar -czf brim-${{ matrix.target }}.tar.gz -C "$(dirname "$bin")" brim
+          shasum -a 256 brim-${{ matrix.target }}.tar.gz > brim-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          zip=brim-${{ matrix.target }}.zip
+          # Zip the bare binary (no nested dirs) so binstall's bin-dir resolves.
+          (cd target/${{ matrix.target }}/release && 7z a "$OLDPWD/$zip" brim.exe)
+          # certutil prints a 3-line report; keep just the hash, matching the
+          # `<hash>  <file>` form `shasum` produces on the unix legs.
+          hash=$(certutil -hashfile "$zip" SHA256 | sed -n '2p' | tr -d '[:space:]')
+          echo "$hash  $zip" > "$zip.sha256"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            brim-${{ matrix.target }}.*
+          generate_release_notes: true

@@ -27,10 +27,7 @@ pub fn print_banner() {
     // mark on the left, wordmark stacked on the right of the middle rows
     println!("\x1b[32m{}\x1b[0m", MARK[0]);
     println!("\x1b[32m{}\x1b[0m  \x1b[1;36m{}\x1b[0m", MARK[1], NAME);
-    println!(
-        "\x1b[32m{}\x1b[0m  \x1b[90m{}\x1b[0m",
-        MARK[2], TAGLINE
-    );
+    println!("\x1b[32m{}\x1b[0m  \x1b[90m{}\x1b[0m", MARK[2], TAGLINE);
     println!();
 }
 

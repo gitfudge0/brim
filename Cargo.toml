@@ -12,10 +12,12 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
 rust-version = "1.75"
+repository = "https://github.com/gitfudge0/brim"
+homepage = "https://github.com/gitfudge0/brim"
 
 [workspace.dependencies]
 # Async runtime
@@ -42,8 +44,8 @@ oauth2 = "5"
 # Database
 rusqlite = { version = "0.32", features = ["bundled"] }
 
-# Secrets
-keyring = { version = "3", features = ["linux-native"] }
+# Secrets — backend feature is selected per-platform in crates/storage/Cargo.toml.
+keyring = { version = "3" }
 
 # Config paths
 directories = "5"

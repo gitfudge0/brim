@@ -4,6 +4,11 @@
 
 # brim
 
+<p align="center">
+  <a href="https://github.com/gitfudge0/brim/actions/workflows/ci.yml"><img src="https://github.com/gitfudge0/brim/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+</p>
+
 Track your AI assistant quotas across Codex, Claude, and Copilot from one fast terminal interface.
 
 `brim` is a Rust CLI/TUI for checking quota status across multiple AI providers. It gives you readable terminal output for day-to-day use and machine-readable JSON for scripts, dashboards, menu bar apps, and other custom tooling.
@@ -14,31 +19,44 @@ Track your AI assistant quotas across Codex, Claude, and Copilot from one fast t
 - Local config and state
 - Auth helpers and diagnostics
 
+## Demo
+
+<p align="center">
+  <img src="assets/demo.gif" alt="brim terminal demo" width="700">
+</p>
+
+> The GIF is generated from [`demo.tape`](demo.tape) with
+> [vhs](https://github.com/charmbracelet/vhs): `vhs demo.tape`. Run it after
+> building to refresh `assets/demo.gif`.
+
 ## Interactive Dashboard
 
 Run `brim` with no subcommand to open an interactive guided dashboard (TUI). It shows live usage status for enabled providers, lets you add or remove providers, and runs auth flows inline. If stdout is not a terminal (piped or redirected), bare `brim` prints the same output as `brim status`.
 
-## Build
+## Install
+
+Pick whichever you have on hand — all of them give you the same `brim` binary.
+
+**Prebuilt binary (no toolchain needed)** — download for your platform from the
+[latest release](https://github.com/gitfudge0/brim/releases/latest), or:
+
+```bash
+# Cargo users — fetches a prebuilt binary, no compiling:
+cargo binstall brim-cli
+
+# From source via Cargo:
+cargo install --git https://github.com/gitfudge0/brim brim-cli
+```
+
+Prebuilt binaries are published for Linux (x86_64), macOS (Apple Silicon and
+Intel), and Windows (x86_64) on every tagged release.
+
+**From a clone**, into `~/.local/bin` (override with `PREFIX`):
 
 ```bash
 git clone https://github.com/gitfudge0/brim.git
 cd brim
-cargo build --release
-./target/release/brim --help
-```
-
-## Install
-
-Install `brim` locally into `~/.local/bin`:
-
-```bash
-./install.sh
-```
-
-You can override the install prefix:
-
-```bash
-PREFIX=/tmp/brim-test ./install.sh
+./install.sh                      # or: PREFIX=/tmp/brim-test ./install.sh
 ```
 
 ## Uninstall
@@ -77,7 +95,7 @@ brim status
 - `brim json [provider] [--fresh] [--full]` emits machine-readable usage JSON (`--full` for the richer summary)
 - `brim sync [provider]` fetches fresh usage data and stores it locally
 - `brim provider list|enable|disable <provider>` lists or toggles which providers are active
-- `brim autosync enable|disable|status` runs background syncing on a schedule via an OS service (systemd/launchd)
+- `brim autosync enable|disable|status` runs background syncing on a schedule via an OS service (systemd on Linux, launchd on macOS, Task Scheduler on Windows)
 - `brim autosync interval [secs] [--provider <provider>]` shows or sets the sync cadence (changes apply to a running auto-sync within seconds, no restart)
 - `brim auth status|login|logout` manages provider authentication
 - `brim config show|init|edit` manages local config

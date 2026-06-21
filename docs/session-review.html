@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>brim — Session Review</title>
+<style>
+  :root{
+    --bg:#1a1b26; --bg2:#1f2335; --panel:#24283b; --border:#2f334d;
+    --t1:#c0caf5; --t2:#9aa5ce; --t3:#565f89;
+    --accent:#7aa2f7; --green:#9ece6a; --yellow:#e0af68; --red:#f7768e; --purple:#bb9af7; --cyan:#7dcfff;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:Inter,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--t1);font-family:var(--sans);overflow:hidden}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+    padding:64px 80px;animation:fade .4s ease}
+  .slide.on{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  h1{font-size:52px;line-height:1.1;letter-spacing:-1px}
+  h2{font-size:34px;margin-bottom:24px;letter-spacing:-.5px}
+  h2 .n{color:var(--t3);font-family:var(--mono);font-size:22px;margin-right:14px}
+  .sub{color:var(--t2);font-size:20px;margin-top:18px;max-width:60ch}
+  .tag{display:inline-block;font-family:var(--mono);font-size:13px;color:var(--accent);
+    border:1px solid var(--border);border-radius:999px;padding:4px 14px;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase}
+  ul{list-style:none;display:flex;flex-direction:column;gap:14px;margin-top:8px}
+  li{font-size:19px;color:var(--t1);padding-left:28px;position:relative;line-height:1.45;max-width:80ch}
+  li::before{content:"▸";position:absolute;left:0;color:var(--accent)}
+  li small{color:var(--t2);font-size:16px}
+  code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);
+    border-radius:6px;padding:1px 7px;font-size:.88em;color:var(--cyan)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
+  .card h3{font-size:18px;margin-bottom:10px;color:var(--cyan)}
+  .card p{color:var(--t2);font-size:15.5px;line-height:1.5}
+  .card.green{border-color:#2e4b2e}.card.green h3{color:var(--green)}
+  .card.red{border-color:#4b2e35}.card.red h3{color:var(--red)}
+  .card.yellow{border-color:#4b412e}.card.yellow h3{color:var(--yellow)}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:16px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border)}
+  th{color:var(--t3);font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+  td code{font-size:13.5px}
+  .ok{color:var(--green)} .no{color:var(--red)} .mut{color:var(--t3)}
+  .foot{position:absolute;bottom:26px;left:80px;right:80px;display:flex;justify-content:space-between;
+    font-family:var(--mono);font-size:12.5px;color:var(--t3)}
+  .bar{position:absolute;top:0;left:0;height:3px;background:var(--accent);transition:width .3s}
+  .big{font-size:120px;font-weight:700;letter-spacing:-4px;background:linear-gradient(120deg,var(--accent),var(--purple));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--t2);font-size:22px;margin-top:20px;max-width:62ch;line-height:1.5}
+  .pill{font-family:var(--mono);font-size:14px;padding:6px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide on">
+  <span class="tag">Session Review · pre-merge</span>
+  <h1>brim — closing the gap to a<br>real OSS project</h1>
+  <p class="lead">A batch of distribution, cross-platform, and contributor-experience changes.
+  No new product features chased — the work targets <strong>reach and trust</strong>, the things
+  that actually convert "cool tool" into stars and contributors.</p>
+  <div class="row">
+    <span class="pill" style="color:var(--green)">✓ fmt · clippy · 47 tests green</span>
+    <span class="pill" style="color:var(--cyan)">9 areas · reviewed · not pushed</span>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2><span class="n">00</span>The thesis</h2>
+  <p class="sub">brim didn't lack features — it lacked reach. So the session fixed the
+  <em>distribution and contribution</em> layer, not the product.</p>
+  <div class="grid" style="margin-top:30px">
+    <div class="card green"><h3>What drives stars</h3><p>Frictionless install, green CI badges, works on every OS, an obvious "how to contribute" path.</p></div>
+    <div class="card"><h3>What we left alone</h3><p>The core (provider trait, confidence model, SQLite history) is already clean and well-tested. Don't touch what works.</p></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2><span class="n">01</span>CI/CD — the trust signal</h2>
+  <div class="grid">
+    <div class="card"><h3>.github/workflows/ci.yml</h3><p><code>fmt --check</code> + <code>clippy -D warnings</code> on Linux, plus <code>cargo test</code> across <strong>Linux · macOS · Windows</strong> matrix.</p></div>
+    <div class="card"><h3>.github/workflows/release.yml</h3><p>Tag <code>v*</code> → cross-compile 4 targets → upload tarballs/zip + SHA256 to the GitHub release.</p></div>
+  </div>
+  <ul style="margin-top:22px">
+    <li>Targets: <code>x86_64-linux</code>, <code>aarch64-darwin</code>, <code>x86_64-darwin</code>, <code>x86_64-windows-msvc</code></li>
+    <li>Plus <code>dependabot.yml</code> for weekly Cargo + Actions bumps</li>
+  </ul>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2><span class="n">02</span>Frictionless install</h2>
+  <p class="sub">Before: clone + <code>cargo build</code>. After: one line, no toolchain.</p>
+  <ul style="margin-top:24px">
+    <li><code>cargo binstall brim-cli</code> <small>— grabs a prebuilt binary via release-asset metadata in <code>crates/cli/Cargo.toml</code></small></li>
+    <li>Prebuilt binary downloads from the Releases page <small>— Linux, macOS (Apple Silicon + Intel), Windows</small></li>
+    <li>README install section rewritten <small>— binstall / prebuilt / from-source, in that order</small></li>
+    <li>Added <code>repository</code> + <code>homepage</code> + <code>description</code> for crates.io readiness</li>
+  </ul>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2><span class="n">03</span>Windows support (was Linux/macOS only)</h2>
+  <div class="grid">
+    <div class="card"><h3>schtasks autosync module</h3><p>New <code>cfg(windows)</code> arm in <code>service.rs</code> registers a Task Scheduler job (<code>/sc onlogon</code>, scoped to the user via <code>/ru</code>).</p></div>
+    <div class="card yellow"><h3>The real blocker: keyring</h3><p><code>keyring</code> was pinned to <code>linux-native</code> for <em>all</em> platforms — macOS/Windows builds would never have linked.</p></div>
+  </div>
+  <ul style="margin-top:20px">
+    <li>Now per-target: <code>linux-native</code> / <code>apple-native</code> / <code>windows-native</code> + a no-backend fallback</li>
+    <li><span class="mut">Caveat: macOS/Windows compiles are verified by CI — no cross-toolchain on this Linux box</span></li>
+  </ul>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2><span class="n">04</span>Contributor on-ramp</h2>
+  <ul>
+    <li><code>ARCHITECTURE.md</code> <small>— crate map, data-flow diagram, and a step-by-step "Adding a provider" guide</small></li>
+    <li><code>.github/PULL_REQUEST_TEMPLATE.md</code> <small>— the fmt/clippy/test/changelog checklist</small></li>
+    <li><code>CHANGELOG.md</code> <small>— Keep-a-Changelog format, Unreleased section populated</small></li>
+    <li><code>CONTRIBUTING.md</code> <small>— links architecture, documents the full local gate</small></li>
+    <li><code>dependabot.yml</code> <small>— keeps deps current without manual chasing</small></li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2><span class="n">05</span>Adoption surface + demo</h2>
+  <div class="grid">
+    <div class="card"><h3>docs/INTEGRATIONS.md</h3><p>Copy-paste <code>brim json | jq</code> snippets for <strong>tmux · Starship · Waybar · Polybar</strong>. No new code — the JSON output already supported this.</p></div>
+    <div class="card"><h3>demo.tape</h3><p>A <a style="color:var(--cyan)">vhs</a> tape that renders <code>assets/demo.gif</code>; README now has a Demo section + CI/license badges.</p></div>
+  </div>
+  <p class="sub" style="margin-top:24px">Status-bar widget users are exactly the crowd that stars CLIs and writes blog posts.</p>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2><span class="n">06</span>Pre-existing fixes (so new CI is green)</h2>
+  <p class="sub">The new gates would have failed on day one against existing code. Fixed first:</p>
+  <ul style="margin-top:22px">
+    <li>rustfmt violations in <code>brand.rs</code> and <code>commands/mod.rs</code> <small>— cosmetic, auto-formatted</small></li>
+    <li>clippy <code>ptr_arg</code> in <code>core/history.rs</code> <small>— <code>&mut Vec&lt;f64&gt;</code> → <code>&mut [f64]</code></small></li>
+  </ul>
+  <p class="sub" style="margin-top:26px;color:var(--green)">Result: a clean baseline that the CI I added actually passes.</p>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2><span class="n">07</span>Code review pass — 6 findings</h2>
+  <table>
+    <tr><th>Finding</th><th>Verdict</th></tr>
+    <tr><td>Windows <code>7z</code> embedded full path → binary unreachable by binstall</td><td class="ok">fixed</td></tr>
+    <tr><td><code>certutil</code> 3-line output → unparseable <code>.sha256</code></td><td class="ok">fixed</td></tr>
+    <tr><td><code>schtasks</code> missing <code>/ru</code> → runs as SYSTEM, can't read user keyring</td><td class="ok">fixed</td></tr>
+    <tr><td>No keyring dep for non-tier-1 targets → compile break</td><td class="ok">fixed</td></tr>
+    <tr><td>binstall <code>{ archive-suffix }</code> not a valid token → 404</td><td class="ok">fixed</td></tr>
+    <tr><td><code>is_active</code> "not registered" should return <code>None</code></td><td class="no">rejected</td></tr>
+  </table>
+  <p class="sub" style="margin-top:18px"><span class="no">Rejected:</span> Linux <code>systemctl is-active</code> also returns <code>Some(false)</code> for a missing unit — the Windows behavior is consistent, the premise was wrong.</p>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2><span class="n">08</span>Deliberately NOT built</h2>
+  <p class="sub">Honesty over checkbox-completion. Each of these is a real recommendation, but wrong to build blind this session:</p>
+  <div class="grid" style="margin-top:24px">
+    <div class="card red"><h3>New providers · $ cost tracking</h3><p>Need real provider API credentials to test. Untested integration is worse than none. Guide written instead.</p></div>
+    <div class="card red"><h3>Dynamic plugin system</h3><p>YAGNI — the <code>Provider</code> trait already extends to N providers in one binary. Dynamic loading is speculative.</p></div>
+    <div class="card red"><h3>1.0 version bump</h3><p>A stability promise is the owner's call, not an agent's.</p></div>
+    <div class="card yellow"><h3>Budget threshold alerts</h3><p>Feasible on existing % data, but needs a cross-platform notification dep + testing. Flagged as next.</p></div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2><span class="n">09</span>Verification status</h2>
+  <table>
+    <tr><th>Gate</th><th>Linux (local)</th><th>macOS / Windows</th></tr>
+    <tr><td><code>cargo fmt --check</code></td><td class="ok">✓ pass</td><td class="mut">— n/a</td></tr>
+    <tr><td><code>cargo clippy -D warnings</code></td><td class="ok">✓ pass</td><td class="mut">gated to CI</td></tr>
+    <tr><td><code>cargo test --workspace</code></td><td class="ok">✓ 47 passed</td><td class="mut">gated to CI</td></tr>
+    <tr><td>cross-compile (4 targets)</td><td class="mut">no toolchain</td><td class="mut">gated to release CI</td></tr>
+  </table>
+  <p class="sub" style="margin-top:22px">keyring feature names confirmed against locked <code>keyring 3.6.3</code>; all workflow YAML validated.
+  <strong>Nothing pushed</strong> — awaiting your review.</p>
+</section>
+
+<!-- 12 -->
+<section class="slide" style="align-items:center;text-align:center">
+  <div class="big">47 / 47</div>
+  <p class="lead" style="text-align:center">Tests green · review applied · zero pushes.<br>
+  Next step is yours: merge locally, or say the word to push and tag a release.</p>
+  <div class="row" style="justify-content:center">
+    <span class="pill">← → to navigate</span>
+    <span class="pill">docs/session-review.html</span>
+  </div>
+</section>
+
+<div class="bar" id="bar"></div>
+<div class="foot"><span>brim · session review</span><span id="pg"></span></div>
+
+<script>
+  const s=[...document.querySelectorAll('.slide')];let i=0;
+  const show=n=>{i=Math.max(0,Math.min(s.length-1,n));s.forEach((e,k)=>e.classList.toggle('on',k===i));
+    document.getElementById('bar').style.width=((i+1)/s.length*100)+'%';
+    document.getElementById('pg').textContent=(i+1)+' / '+s.length;};
+  addEventListener('keydown',e=>{
+    if(['ArrowRight',' ','PageDown'].includes(e.key)){show(i+1);e.preventDefault();}
+    if(['ArrowLeft','PageUp'].includes(e.key))show(i-1);
+    if(e.key==='Home')show(0);if(e.key==='End')show(s.length-1);
+  });
+  show(0);
+</script>
+</body>
+</html>

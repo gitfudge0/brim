@@ -207,7 +207,72 @@ mod platform {
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(target_os = "windows")]
+mod platform {
+    use super::*;
+
+    // Registered Scheduled Task name. Backslash would create a folder; keep flat.
+    const TASK_NAME: &str = "brim-autosync";
+
+    fn schtasks(args: &[&str]) -> Result<bool> {
+        let status = Command::new("schtasks")
+            .args(args)
+            .status()
+            .context("failed to run schtasks (Windows Task Scheduler)")?;
+        Ok(status.success())
+    }
+
+    pub fn install() -> Result<ServiceOutcome> {
+        let exe = brim_exe()?;
+        // /sc onlogon keeps it alive across reboots without admin rights; the
+        // run loop itself supervises crashes via its internal retry.
+        let run = format!("\"{}\" autosync run", exe.to_string_lossy());
+        // ponytail: /ru %USERNAME% scopes the task to the interactive user so it
+        // can read the per-user keyring; without it some SKUs default to SYSTEM,
+        // which can't see DPAPI-protected credentials. %USERNAME% is expanded by
+        // schtasks itself. Upgrade to an explicit SID only if a SKU misbehaves.
+        let ok = schtasks(&[
+            "/create",
+            "/tn",
+            TASK_NAME,
+            "/tr",
+            &run,
+            "/sc",
+            "onlogon",
+            "/ru",
+            "%USERNAME%",
+            "/f",
+        ])?;
+        if !ok {
+            return Err(anyhow!("schtasks /create {TASK_NAME} failed"));
+        }
+        // Start it now so the first sync doesn't wait for the next logon.
+        schtasks(&["/run", "/tn", TASK_NAME]).ok();
+        Ok(ServiceOutcome::Done)
+    }
+
+    pub fn uninstall() -> Result<ServiceOutcome> {
+        schtasks(&["/end", "/tn", TASK_NAME]).ok();
+        schtasks(&["/delete", "/tn", TASK_NAME, "/f"]).ok();
+        Ok(ServiceOutcome::Done)
+    }
+
+    pub fn is_active() -> Option<bool> {
+        // `/query` exits non-zero when the task isn't registered.
+        let out = Command::new("schtasks")
+            .args(["/query", "/tn", TASK_NAME])
+            .output()
+            .ok()?;
+        if !out.status.success() {
+            return Some(false);
+        }
+        // Registered; report Running vs not from the status column.
+        let text = String::from_utf8_lossy(&out.stdout);
+        Some(text.contains("Running"))
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 mod platform {
     use super::*;
 

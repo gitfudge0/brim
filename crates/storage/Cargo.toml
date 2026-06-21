@@ -14,4 +14,19 @@ anyhow = { workspace = true }
 rusqlite = { workspace = true }
 directories = { workspace = true }
 tracing = { workspace = true }
+
+# keyring needs a different native backend per OS; selecting them per-target is
+# what lets brim build on Linux, macOS, and Windows from the same source.
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { workspace = true, features = ["linux-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { workspace = true, features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { workspace = true, features = ["windows-native"] }
+
+# Other targets get keyring with no native backend (mock store) so the crate
+# still compiles; brim only ships binaries for the three OSes above.
+[target.'cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))'.dependencies]
 keyring = { workspace = true }

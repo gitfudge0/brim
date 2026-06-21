@@ -248,7 +248,7 @@ fn compute_session_depths(snapshots: &[UsageSnapshot]) -> (Option<f64>, Option<f
 }
 
 /// Compute a percentile (0–100) of a slice; sorts the data in place.
-fn percentile(data: &mut Vec<f64>, p: f64) -> f64 {
+fn percentile(data: &mut [f64], p: f64) -> f64 {
     data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     if data.is_empty() {
         return 0.0;
