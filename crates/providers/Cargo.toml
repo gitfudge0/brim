@@ -16,4 +16,4 @@ async-trait = { workspace = true }
 reqwest = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
-base64 = "0.22"
+base64 = "0.23"
