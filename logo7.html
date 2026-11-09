@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brim — fill-B variations</title>
+<style>
+  :root { --bg:#0d1117; --fg:#e6edf3; --mut:#7d8590; --card:#161b22; --line:#30363d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:32px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.sub { color:var(--mut); margin:0 0 24px; }
+  .controls { margin-bottom:24px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .controls label { color:var(--mut); cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .art { width:120px; height:120px; display:flex; align-items:center; justify-content:center; }
+  .meta { text-align:center; }
+  .meta .n { font-weight:600; }
+  .meta .d { color:var(--mut); font-size:12px; }
+  .wordmark { font-size:24px; font-weight:700; letter-spacing:-0.5px; display:flex; align-items:center; gap:8px; }
+  .light .card { background:#fff; border-color:#d0d7de; }
+  .light .meta .d { color:#57606a; }
+</style>
+</head>
+<body>
+<h1>brim · fill-B</h1>
+<p class="sub">Variations on option 7 — the B with a rising fill level. Drag the fill slider to preview different quota states.</p>
+
+<div class="controls">
+  <label><input type="checkbox" id="bg"> Light background</label>
+  <label>Accent <input type="color" id="ac" value="#3fb950"></label>
+  <label>Fill <input type="range" id="fill" min="0" max="100" value="55"> <span id="fillv">55%</span></label>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+// Each variation gets the fill fraction f (0..1) and accent ac.
+// y of the fill surface across a 20..80 box: top=20, bottom=80 => y = 80 - 60*f
+const Y = f => 80 - 60*f;
+
+const variants = [
+ {n:"7a · Rounded B", d:"Original — soft rounded lobes", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7a"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7a)">
+     <rect x="20" y="20" width="60" height="60" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${60*f}" fill="${ac}"/>
+   </g>
+  </svg>`},
+
+ {n:"7b · Stencil B", d:"Counters knocked out, sharp spine", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7b"><path d="M32 20 h20 a13 13 0 0 1 0 26 h-20 z M32 48 h24 a13 13 0 0 1 0 26 h-24 z" fill-rule="evenodd"/></clipPath>
+   <mask id="m7b"><rect x="0" y="0" width="96" height="96" fill="#fff"/><rect x="38" y="27" width="11" height="12" rx="3"/><rect x="38" y="55" width="13" height="12" rx="3"/></mask></defs>
+   <g clip-path="url(#c7b)" mask="url(#m7b)">
+     <rect x="20" y="14" width="60" height="66" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${66*f}" fill="${ac}"/>
+   </g>
+  </svg>`},
+
+ {n:"7c · Wave surface", d:"Liquid meniscus on the fill line", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7c"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7c)">
+     <rect x="20" y="20" width="60" height="60" fill="#30363d"/>
+     <path d="M20 ${Y(f)} q10 -6 20 0 t20 0 t20 0 V80 H20 z" fill="${ac}"/>
+   </g>
+  </svg>`},
+
+ {n:"7d · Outlined B", d:"Stroke shell, fill rises inside", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7d"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7d)">
+     <rect x="20" y="${Y(f)}" width="60" height="${60*f}" fill="${ac}" opacity=".4"/>
+   </g>
+   <path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z" fill="none" stroke="${ac}" stroke-width="4"/>
+  </svg>`},
+
+ {n:"7e · Mono slab B", d:"Monospace-weight slab, flat lobes", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7e"><path d="M32 20 h16 a13 13 0 0 1 0 26 h-16 z M32 48 h20 a13 13 0 0 1 0 26 h-20 z"/><rect x="32" y="20" width="9" height="54"/></clipPath></defs>
+   <g clip-path="url(#c7e)">
+     <rect x="20" y="14" width="60" height="66" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${66*f}" fill="${ac}"/>
+   </g>
+  </svg>`},
+
+ {n:"7f · Tick marks", d:"Gauge ticks down the spine", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7f"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7f)">
+     <rect x="20" y="20" width="60" height="60" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${60*f}" fill="${ac}"/>
+     <g stroke="#0d1117" stroke-width="2" opacity=".3">
+       <line x1="34" y1="35" x2="40" y2="35"/><line x1="34" y1="50" x2="40" y2="50"/><line x1="34" y1="65" x2="40" y2="65"/>
+     </g>
+   </g>
+  </svg>`},
+
+ {n:"7g · Rounded square tile", d:"App-icon ready, B reversed out", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><mask id="m7g"><rect x="0" y="0" width="96" height="96" fill="#fff"/>
+     <path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z" fill="#000"/>
+     <rect x="40" y="29" width="10" height="12" rx="3" fill="#fff"/><rect x="40" y="57" width="12" height="12" rx="3" fill="#fff"/></mask></defs>
+   <g mask="url(#m7g)">
+     <rect x="8" y="8" width="80" height="80" rx="20" fill="#30363d"/>
+     <rect x="8" y="${8 + (80-80*f)}" width="80" height="${80*f}" rx="0" fill="${ac}"/>
+   </g>
+  </svg>`},
+
+ {n:"7h · Gradient fill", d:"Surface fades to deep accent", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7h"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath>
+   <linearGradient id="g7h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${ac}"/><stop offset="1" stop-color="${ac}" stop-opacity=".55"/></linearGradient></defs>
+   <g clip-path="url(#c7h)">
+     <rect x="20" y="20" width="60" height="60" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${60*f}" fill="url(#g7h)"/>
+   </g>
+  </svg>`},
+
+ {n:"7i · Bubbles", d:"Carbonated quota, rising bubbles", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs><clipPath id="c7i"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7i)">
+     <rect x="20" y="20" width="60" height="60" fill="#30363d"/>
+     <rect x="20" y="${Y(f)}" width="60" height="${60*f}" fill="${ac}"/>
+     <g fill="#0d1117" opacity=".3"><circle cx="44" cy="68" r="2.5"/><circle cx="58" cy="62" r="2"/><circle cx="50" cy="74" r="1.6"/></g>
+   </g>
+  </svg>`},
+
+ {n:"7j · Split B", d:"Two lobes fill independently", svg:(ac,f)=>`
+  <svg width="96" height="96" viewBox="0 0 96 96">
+   <defs>
+     <clipPath id="c7j-top"><path d="M34 22 h18 a14 14 0 0 1 0 28 h-18 z"/></clipPath>
+     <clipPath id="c7j-bot"><path d="M34 50 h22 a14 14 0 0 1 0 28 h-22 z"/></clipPath></defs>
+   <g clip-path="url(#c7j-top)"><rect x="20" y="22" width="60" height="28" fill="#30363d"/><rect x="20" y="${50-28*Math.min(1,f*1.3)}" width="60" height="${28*Math.min(1,f*1.3)}" fill="${ac}"/></g>
+   <g clip-path="url(#c7j-bot)"><rect x="20" y="50" width="60" height="28" fill="#30363d"/><rect x="20" y="${78-28*f}" width="60" height="${28*f}" fill="${ac}"/></g>
+  </svg>`},
+];
+
+const grid = document.getElementById('grid');
+const fillEl = document.getElementById('fill');
+const fillv = document.getElementById('fillv');
+function render(){
+  const ac = document.getElementById('ac').value;
+  const f = fillEl.value/100;
+  fillv.textContent = fillEl.value + '%';
+  grid.innerHTML = variants.map(v=>`
+    <div class="card">
+      <div class="art">${v.svg(ac,f)}</div>
+      <div class="wordmark"><span style="color:${ac}">▸</span>brim</div>
+      <div class="meta"><div class="n">${v.n}</div><div class="d">${v.d}</div></div>
+    </div>`).join('');
+}
+document.getElementById('ac').addEventListener('input',render);
+fillEl.addEventListener('input',render);
+document.getElementById('bg').addEventListener('change',e=>document.body.classList.toggle('light',e.target.checked));
+render();
+</script>
+</body>
+</html>
